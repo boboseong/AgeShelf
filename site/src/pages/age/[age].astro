@@ -44,7 +44,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
         <select id="libSelect" disabled><option value="">도서관 선택</option></select>
         <button class="chip" id="libNear" type="button">내 주변</button>
         <button class="chip" id="libClear" type="button" hidden>도서관 해제</button>
-        <span class="sub" style="margin:0;font-size:11px">소장 정보는 {regionNames[holdRegions[0]] ?? ''}{holdRegions.slice(1).map((r) => '·' + (regionNames[r] ?? r)).join('')} 도서관 {Number(holdings.n_libs).toLocaleString()}곳, 핵심 도서 {Number(holdings.n_books).toLocaleString()}권 기준</span>
+        <span class="sub" style="margin:0;font-size:11px">소장 정보: {holdRegions.map((r) => `${regionNames[r] ?? r} ${Number((holdings.by_region ?? {})[r] ?? 0).toLocaleString()}권`).join(' · ')} (도서관 {Number(holdings.n_libs).toLocaleString()}곳)</span>
       </div>
     </div>}
     <div class="fgroup"><div class="flabel">분야</div>
@@ -153,7 +153,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       current = compute(); shown = 0;
       $('#teaser').hidden = true; $('#list').innerHTML = '';
       const order = state.tab === 'popular' ? `${label} 대출 건수순` : '추천도(적합도 + 인기, 100점)순';
-      const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만(소장 정보가 있는 핵심 도서 기준)` : '';
+      const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만` : '';
       $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}`;
       renderMore();
     }

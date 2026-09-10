@@ -10,7 +10,8 @@ if (-not $SkipCollect) {
 }
 python scripts/build_metrics.py --slice all   # loans_long + loans_long_kdc 자동 병합
 python scripts/tags.py                        # 태그(세부 라벨·형태·출판사·성격·요즘 인기)
-python scripts/collect_holdings.py --regions 21,38   # 도서관 디렉터리 + 핵심 도서 소장(캐시 증분)
+python scripts/collect_holdings.py --regions 21 --books index --workers 4   # 부산: 색인 전체 도서 소장(재개 가능, ~4시간)
+python scripts/collect_holdings.py --regions 38 --books core --skip-directory  # 경남: 핵심 도서만
 python scripts/export_site.py
 python scripts/export_lists.py
 Push-Location site; npm run build; Pop-Location

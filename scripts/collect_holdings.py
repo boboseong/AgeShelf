@@ -1,19 +1,24 @@
-"""도서관 디렉터리 + 핵심 도서의 소장 도서관 수집
+"""도서관 디렉터리 + 도서의 소장 도서관 수집 (지역별, 병렬, 재개 가능)
 
-  1) libSrch 를 지역별(17회)로 호출해 참여 도서관 전체(1,619곳)를 지역 코드와 함께 저장 → data/processed/libs.parquet
-  2) 핵심 도서(site/src/data/books.json 의 키 = 나이별 목록 노출 도서) × 지역 → libSrchByBook (책·지역당 1회, 전체 반환)
-     → data/processed/holdings.parquet (isbn13, region, libCode)
+  1) libSrch 지역별(17회) → data/processed/libs.parquet (참여 도서관 1,619곳, 좌표 포함)
+  2) libSrchByBook: 책 × 지역 1회 → data/processed/holdings.parquet (isbn13, region, libCode)
+     - 대상 책은 --books 로 선택: core(나이별 목록 노출분) / index(나이별 색인 합집합) / all(전체 지표 도서)
+     - 우선순위: 나이별 추천도 최고값이 높은 책부터 (중간에 멈춰도 사용자가 보는 책부터 채워짐)
+     - 이미 수집한 (책, 지역) 은 건너뛰므로 재실행이 곧 증분·재개
 
-실행: python scripts/collect_holdings.py --regions 21,38            # 부산·경남
-      python scripts/collect_holdings.py --regions all --books core  # 전 지역
-naru.call 캐시를 쓰므로 재실행·증분은 캐시된 호출을 건너뛴다.
+실행 예:
+  python scripts/collect_holdings.py --regions 21 --books index --workers 4     # 부산 전체(약 4시간)
+  python scripts/collect_holdings.py --regions 21,38 --books core               # 핵심 도서만(빠름)
 """
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -27,6 +32,7 @@ PROC = ROOT / "data" / "processed"
 REGIONS = {"11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주", "25": "대전", "26": "울산", "29": "세종",
            "31": "경기", "32": "강원", "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북", "38": "경남", "39": "제주"}
 LIB_FIELDS = ["libCode", "libName", "address", "tel", "latitude", "longitude", "homepage", "closed", "operatingTime", "BookCount"]
+SAVE_EVERY = 2000            # 중간 저장 간격(호출 수)
 
 
 def fetch_directory() -> pd.DataFrame:
@@ -47,57 +53,89 @@ def fetch_directory() -> pd.DataFrame:
     return df
 
 
-def core_isbns() -> list[str]:
-    p = ROOT / "site" / "src" / "data" / "books.json"
-    return sorted(json.load(open(p, encoding="utf-8")).keys())
+def target_isbns(kind: str) -> list[str]:
+    """대상 ISBN 을 추천도 우선순위로 정렬해 반환."""
+    if kind == "core":
+        p = ROOT / "site" / "src" / "data" / "books.json"
+        base = set(json.load(open(p, encoding="utf-8")).keys())
+    elif kind == "index":
+        base = set()
+        for f in glob.glob(str(ROOT / "site" / "public" / "data" / "index" / "*.json")):
+            base |= {r[0] for r in json.load(open(f, encoding="utf-8"))["rows"]}
+    else:
+        base = set(pd.read_parquet(PROC / "books_metrics.parquet").isbn13)
+    ranks = pd.read_parquet(PROC / "age_ranks.parquet")
+    best = ranks[ranks.fit_rank.notna()].groupby("isbn13")["fit_score"].max()
+    s = pd.Series({i: best.get(i, 0.0) for i in base}).sort_values(ascending=False)
+    return list(s.index)
 
 
-def fetch_holdings(isbns: list[str], regions: list[str]) -> pd.DataFrame:
+def fetch_holdings(isbns: list[str], regions: list[str], workers: int) -> pd.DataFrame:
     out_p = PROC / "holdings.parquet"
     old = pd.read_parquet(out_p) if out_p.exists() else pd.DataFrame(columns=["isbn13", "region", "libCode"])
     done = set(zip(old.isbn13, old.region)) if len(old) else set()
-    rows, n_calls, t0 = [], 0, time.time()
-    total = len(isbns) * len(regions)
-    for region in regions:
-        for i, isbn in enumerate(isbns):
-            if (isbn, region) in done:
-                continue
-            try:
-                r = naru.call("libSrchByBook", isbn=isbn, region=region, pageNo=1, pageSize=2000)
-            except naru.NaruError as e:
-                print(f"  ! {isbn} {region}: {e}", flush=True)
-                continue
-            resp = r.get("response", r)
-            libs = resp.get("libs", []) or []
-            for x in libs:
-                rows.append({"isbn13": isbn, "region": region, "libCode": str(x.get("lib", x).get("libCode"))})
-            if not libs:                        # 소장 도서관 없음도 '수집 완료'로 표시 (빈 행)
-                rows.append({"isbn13": isbn, "region": region, "libCode": ""})
-            n_calls += 1
-            if n_calls % 100 == 0:
-                el = time.time() - t0
-                print(f"  {n_calls}회 / 남은 {total - len(done) - n_calls}  ({el/60:.1f}분 경과, 회당 {el/n_calls:.1f}s)", flush=True)
-    new = pd.DataFrame(rows, columns=["isbn13", "region", "libCode"])
-    allh = pd.concat([old, new], ignore_index=True).drop_duplicates()
-    allh.to_parquet(out_p, index=False)
+    jobs = [(i, r) for r in regions for i in isbns if (i, r) not in done]
+    print(f"대상 {len(isbns):,}권 × 지역 {regions} → 남은 호출 {len(jobs):,}회 (동시 {workers})", flush=True)
+    rows: list[dict] = []
+    lock = threading.Lock()
+    state = {"n": 0, "err": 0, "t0": time.time()}
+
+    def save():
+        new = pd.DataFrame(rows, columns=["isbn13", "region", "libCode"])
+        allh = pd.concat([old, new], ignore_index=True).drop_duplicates()
+        allh.to_parquet(out_p, index=False)
+        return allh
+
+    def work(job):
+        isbn, region = job
+        try:
+            r = naru.call("libSrchByBook", cache=False, isbn=isbn, region=region, pageNo=1, pageSize=2000)
+        except naru.NaruError as e:
+            with lock:
+                state["err"] += 1
+                if state["err"] <= 5:
+                    print(f"  ! {isbn} {region}: {e}", flush=True)
+            return
+        libs = (r.get("response", r)).get("libs", []) or []
+        with lock:
+            if libs:
+                for x in libs:
+                    rows.append({"isbn13": isbn, "region": region, "libCode": str(x.get("lib", x).get("libCode"))})
+            else:
+                rows.append({"isbn13": isbn, "region": region, "libCode": ""})   # 소장 없음도 완료로 기록
+            state["n"] += 1
+            if state["n"] % SAVE_EVERY == 0:
+                save()
+                el = time.time() - state["t0"]
+                left = (len(jobs) - state["n"]) * el / state["n"] / 3600
+                print(f"  {state['n']:,}/{len(jobs):,}회 · {el/60:.0f}분 경과 · 남은 {left:.1f}시간 · 오류 {state['err']}", flush=True)
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        list(ex.map(work, jobs))
+    allh = save()
     have = allh[allh.libCode != ""]
-    print(f"소장 정보: {len(have):,}쌍, 책 {have.isbn13.nunique():,}권, 도서관 {have.libCode.nunique():,}곳 → holdings.parquet  (이번 호출 {n_calls}회)")
+    print(f"소장 정보: {len(have):,}쌍, 책 {have.isbn13.nunique():,}권, 도서관 {have.libCode.nunique():,}곳 → holdings.parquet "
+          f"(이번 {state['n']:,}회, 오류 {state['err']})")
     return allh
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--regions", default="21,38", help="지역 코드 쉼표 구분 또는 all")
-    ap.add_argument("--books", choices=["core"], default="core")
+    ap.add_argument("--regions", default="21", help="지역 코드 쉼표 구분 또는 all")
+    ap.add_argument("--books", choices=["core", "index", "all"], default="index")
+    ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--limit", type=int, default=0, help="대상 책 수 상한(우선순위 상위 N권)")
     ap.add_argument("--skip-directory", action="store_true")
     args = ap.parse_args()
     regions = list(REGIONS) if args.regions == "all" else [r.strip() for r in args.regions.split(",")]
     if not args.skip_directory or not (PROC / "libs.parquet").exists():
         print("[디렉터리]")
         fetch_directory()
-    isbns = core_isbns()
-    print(f"[소장 정보] 책 {len(isbns):,}권 × 지역 {regions} = 최대 {len(isbns) * len(regions):,}회")
-    fetch_holdings(isbns, regions)
+    isbns = target_isbns(args.books)
+    if args.limit:
+        isbns = isbns[:args.limit]
+    print(f"[소장 정보] books={args.books}")
+    fetch_holdings(isbns, regions, args.workers)
 
 
 if __name__ == "__main__":

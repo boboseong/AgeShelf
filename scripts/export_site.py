@@ -226,8 +226,10 @@ def export_holdings(src: Path) -> dict:
                      s_(x.operatingTime), s_(x.closed), int(len(by_lib.get(str(x.libCode), [])))])
     (PUB / "libs.json").write_text(json.dumps({"fields": ["code", "name", "addr", "lat", "lon", "region", "home", "hours", "closed", "n"],
                                                 "regions": regions, "libs": rows}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"holdings: 책 {len(HOLDINGS):,}권, 도서관 {len(by_lib):,}곳(소장 파일), 디렉터리 {len(rows):,}곳, 지역 {regions}")
-    return {"regions": regions, "n_books": len(HOLDINGS), "n_libs": len(by_lib)}
+    by_region = {r: int(g.isbn13.nunique()) for r, g in h.groupby(h.region.astype(str))}
+    print(f"holdings: 책 {len(HOLDINGS):,}권, 도서관 {len(by_lib):,}곳(소장 파일), 디렉터리 {len(rows):,}곳, "
+          + "지역별 " + ", ".join(f"{REGION_NAMES.get(r, r)} {n:,}권" for r, n in sorted(by_region.items())))
+    return {"regions": regions, "n_books": len(HOLDINGS), "n_libs": len(by_lib), "by_region": by_region}
 
 
 def main():
