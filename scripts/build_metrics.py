@@ -9,7 +9,7 @@ v3 점수 설계 (PLAN.md 2-8)
            비대칭: 독자 대부분이 더 어린 '지난 책'(F>0.5)은 그대로, 더 큰 '앞으로 볼 책'(F<0.5)은 완만하게(지수 1.5)
   집중도   s[b,a] = min(3, A·P[b,a])  — 13개 나이에 고르면 1. 점수에는 넣지 않고 배지로만 사용
   자격     c ≥ 0.3 이고 그 나이 대출 ≥ 30건
-  점수     fit[b,a] = L[b,a] × c[b,a]   (그 나이 대출수 × 중심도)
+  점수     fit[b,a] = W_CENT·c[b,a] + W_POP·log(L[b,a])/log(Lmax_a)  (0~100점, Lmax_a = 그 나이 후보 최대 대출)  ← v3.1 2026-09-10
   밴드     P 의 25~75% 분위 구간, 중앙 나이 = 50% 분위(보간)
   lift     참고값으로 유지 (비관적: 1~8세는 상한 U, 9세 이상은 관측값)
 
@@ -43,6 +43,7 @@ MIN_LOANS_AT_AGE = 30
 SPEC_CAP = 3.0
 BAND_Q = (0.25, 0.75)   # 밴드 = 중앙 50% 질량 (통념 권장연령과 가장 근접)
 EARLY_POWER = 1.5
+W_CENT, W_POP = 50.0, 50.0   # 추천도 100점 배분 (위치 : 인기). 사용자 결정 2026-09-10
 
 
 def kcell_of(class_no) -> str:
@@ -204,7 +205,12 @@ def build(long: pd.DataFrame, cells: pd.DataFrame | None = None, shrink_m: float
     cent = np.where(F_mid < 0.5, early, cent)
     cent = pd.DataFrame(np.clip(cent, 0, 1), index=L.index, columns=ages)
     spec = (A * P).clip(upper=SPEC_CAP)
-    fit = L * cent
+    # 추천도(0~100): 위치 점수 + 인기 점수(log 대출을 그 나이 후보 최대 대비 정규화)
+    elig_all = (cent >= CENT_MIN) & (L >= MIN_LOANS_AT_AGE)
+    lmax = pd.Series({a: float(L[a][elig_all[a]].max()) if elig_all[a].any() else float(L[a].max()) for a in ages})
+    pop = pd.DataFrame({a: (np.log(L[a].clip(lower=1)) / np.log(max(lmax[a], 2.0))).clip(0, 1) for a in ages})
+    popscore = W_POP * pop
+    fit = W_CENT * cent + popscore
 
     # ---- lift (참고값, 비관적) ----
     U_eff = U.copy()
@@ -266,6 +272,7 @@ def build(long: pd.DataFrame, cells: pd.DataFrame | None = None, shrink_m: float
         books[f"spec_{a}"] = spec[a].round(3)
         books[f"lift_{a}"] = lift[a].round(3)
         books[f"fit_{a}"] = fit[a].round(1)
+        books[f"pop_{a}"] = popscore[a].round(1)
         books[f"obs_{a}"] = observed[a]
 
     ranks = []
@@ -282,6 +289,7 @@ def build(long: pd.DataFrame, cells: pd.DataFrame | None = None, shrink_m: float
             "spec": spec[a].round(3).values,
             "lift": lift[a].round(3).values,
             "fit_score": fit[a].round(1).values,
+            "pop_score": popscore[a].round(1).values,
             "fit_rank": fit_rank.values,
         }))
     return books.reset_index(), pd.concat(ranks, ignore_index=True)
@@ -331,7 +339,7 @@ def main():
         top = ranks[(ranks.age == a) & ranks.fit_rank.notna()].nsmallest(10, "fit_rank")
         print(f"\n[{a}세 적합도 TOP10]  대출 / 중심도 / 집중도 / 밴드")
         for _, r in top.merge(books[["isbn13", "bookname", "band"]], on="isbn13").iterrows():
-            print(f"  {int(r.loan_count):>7}  c {r.cent:4.2f}  s {r.spec:4.2f}  {r.band:>7}  {r.bookname[:36]}")
+            print(f"  {int(r.loan_count):>7}  c {r.cent:4.2f}  추천도 {r.fit_score:5.1f}  {r.band:>7}  {r.bookname[:36]}")
 
 
 if __name__ == "__main__":

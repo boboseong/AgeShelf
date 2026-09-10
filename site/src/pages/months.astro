@@ -11,12 +11,12 @@ const minLoans: number = (meta as any).min_loans ?? 30;
 const pool = Object.values(books as Record<string, any>).map((b) => ({
   isbn13: b.isbn13, title: b.title, authors: b.authors, publisher: b.publisher, year: b.year, cover: b.cover,
   band: b.band, median: b.median ?? b.peak, shape: b.shape, picture: b.picture,
-  loans: b.loans, cents: b.cents ?? [], specs: b.specs ?? [], obs: b.obs, prof: b.prof,
+  loans: b.loans, cents: b.cents ?? [], specs: b.specs ?? [], fits: b.fits ?? [], obs: b.obs, prof: b.prof,
 }));
 ---
 <Base title="개월 수로 찾기">
   <h2>우리 아이 개월 수로 찾기</h2>
-  <p class="sub">"2세" 코호트는 24~35개월을 모두 포함합니다. 개월 수를 넣으면 인접한 두 나이의 데이터를 비율대로 섞어 점수(대출수 × 이 나이 위치)를 다시 매깁니다.</p>
+  <p class="sub">"2세" 코호트는 24~35개월을 모두 포함합니다. 개월 수를 넣으면 인접한 두 나이의 추천도(100점)를 비율대로 섞어 다시 매깁니다.</p>
   <div class="tabs" style="align-items:center;gap:12px">
     <label>개월 수 <input id="months" type="number" min="0" max="167" value="24" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:6px" /></label>
     <span id="weights" class="sub" style="margin:0"></span>
@@ -52,17 +52,18 @@ const pool = Object.values(books as Record<string, any>).map((b) => ({
           const loans = w1 * b.loans[i1] + w2 * b.loans[i2];
           const cent = w1 * (b.cents[i1] ?? 0) + w2 * (b.cents[i2] ?? 0);
           const spec = w1 * (b.specs[i1] ?? 0) + w2 * (b.specs[i2] ?? 0);
-          return { b, s: loans * cent, l: Math.round(loans), cent, spec };
+          const fit = w1 * (b.fits[i1] ?? 0) + w2 * (b.fits[i2] ?? 0);
+          return { b, s: fit, l: Math.round(loans), cent, spec, fit };
         })
         .filter((x) => x.cent >= centMin && x.l >= minLoans)
         .sort((x, y) => y.s - x.s).slice(0, 60);
-      $('#out').innerHTML = scored.map(({ b, l, cent, spec }, i) => {
+      $('#out').innerHTML = scored.map(({ b, l, cent, spec, fit }, i) => {
         const max = Math.max(...b.prof);
         const bars = profAges.map((a, k) => `<i class="${(a === a1 || a === a2) ? 'on ' : ''}${b.obs[k] ? '' : 'miss'}" style="height:${Math.max(6, Math.round(100 * b.prof[k] / max))}%" title="${a}세 ${(100*b.prof[k]).toFixed(0)}%"></i>`).join('');
         const axis = profAges.map((a) => `<span>${a}</span>`).join('');
         return `<a class="card" href="${base}/b/?isbn=${b.isbn13}">
           <div>${b.cover ? `<img class="cover" src="${b.cover}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
-          <div><div class="rank">#${i + 1} · 보간 대출 ${l.toLocaleString()}건 · 이 나이 위치 ${Math.floor(cent * 100)}%</div>
+          <div><div class="rank">#${i + 1} · 추천도 <b>${fit.toFixed(1)}</b> · 보간 대출 ${l.toLocaleString()}건 · 적합도 ${Math.floor(cent * 100)}%</div>
           <div class="title">${esc(b.title)}</div><div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)}</div>
           <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.median).toFixed(1)}세</span>${spec >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.shape && b.shape !== '대칭' ? `<span class="badge">${esc(b.shape)}</span>` : ''}${b.picture ? '<span class="badge pic">그림책</span>' : ''}</div>
           <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;

@@ -3,7 +3,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const Q36 = '0123456789abcdefghijklmnopqrstuvwxyz';
   const SHAPES = ['대칭', '더 큰 아이 쪽으로 넓음', '더 어린 아이부터 봄'];
-  function centLabel(pct) { return pct >= 80 ? '중심' : pct >= 50 ? '중심 근처' : pct >= 30 ? '가장자리' : '다른 나이 책'; }
+  function centLabel(pct) { return pct >= 80 ? '딱 맞음' : pct >= 50 ? '잘 맞음' : pct >= 30 ? '가장자리' : '다른 나이 책'; }
   // 비중 13자(0~35) → 숫자 배열 (최고점 대비 %)
   window.AgeShelfProf = function (q) {
     if (Array.isArray(q)) return q;
@@ -30,7 +30,7 @@
     fl.slice(0, 2).forEach((c) => { if (flagTags[c]) chips.push(`<span class="badge tag flag" data-f="flag" data-v="${c}">${esc(flagTags[c])}</span>`); });
     return `<a class="card" href="${base}/b/?isbn=${esc(b.i)}">
       <div>${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
-      <div><div class="rank">#${rank} · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 이 나이 위치 ${pct}% (${centLabel(pct)})</div>
+      <div><div class="rank">#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})</div>
       <div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>
       <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.med).toFixed(1)}세</span>${b.sp >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.sh && b.sh !== '대칭' ? `<span class="badge">${esc(b.sh)}</span>` : ''}${b.pic ? '<span class="badge pic">그림책</span>' : ''}${chips.join('')}</div>
       <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;

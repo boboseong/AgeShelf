@@ -7,12 +7,12 @@ const profAges: number[] = meta.profile_ages;
 const labels: Record<string, string> = (meta as any).labels ?? {};
 const max = Math.max(...b.prof);
 const centPct = Math.floor((b.cent ?? 0) * 100);
-const centLabel = centPct >= 80 ? '중심' : centPct >= 50 ? '중심 근처' : centPct >= 30 ? '가장자리' : '다른 나이 책';
+const centLabel = centPct >= 80 ? '딱 맞음' : centPct >= 50 ? '잘 맞음' : centPct >= 30 ? '가장자리' : '다른 나이 책';
 ---
 <a class="card" href={`${base}/b/?isbn=${b.isbn13}`}>
   <div>{b.cover ? <img class="cover" src={b.cover} alt="" loading="lazy" /> : <div class="cover"></div>}</div>
   <div>
-    <div class="rank">#{rank} · {labels[String(age)] ?? `${age}세`} 대출 {b.loan_count.toLocaleString()}건 · 이 나이 위치 {centPct}% ({centLabel})</div>
+    <div class="rank">#{rank} · 추천도 <b>{Number(b.fit ?? 0).toFixed(1)}</b> · {labels[String(age)] ?? `${age}세`} 대출 {b.loan_count.toLocaleString()}건 · 연령 적합도 {centPct}% ({centLabel})</div>
     <div class="title">{b.title}</div>
     <div class="meta">{b.authors} · {b.publisher} · {b.year}</div>
     <div class="badges">

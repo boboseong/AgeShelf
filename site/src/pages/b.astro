@@ -12,10 +12,12 @@ const gamma: number = (meta as any).gamma ?? 1;
 const flagTags: string[] = (meta as any).flag_tags ?? [];
 const showAges: number[] = meta.ages;
 const regionNames: Record<string, string> = (meta as any).region_names ?? {};
+const wCent: number = (meta as any).w_cent ?? 50;
+const wPop: number = (meta as any).w_pop ?? 50;
 ---
 <Base title="책 상세">
   <div id="root"><p class="sub">불러오는 중…</p></div>
-  <script is:inline define:vars={{ profAges, labels, base, centMin, minLoans, gamma, flagTags, showAges, regionNames }}>
+  <script is:inline define:vars={{ profAges, labels, base, centMin, minLoans, gamma, flagTags, showAges, regionNames, wCent, wPop }}>
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const root = document.getElementById('root');
     const isbn = new URLSearchParams(location.search).get('isbn') || '';
@@ -33,17 +35,19 @@ const regionNames: Record<string, string> = (meta as any).region_names ?? {};
     function render(b) {
       document.title = `${b.title} · AgeShelf`;
       const max = Math.max(...b.prof, 1e-9);
-      const cents = b.cents || [], specs = b.specs || [], fits = b.fits || [];
+      const cents = b.cents || [], specs = b.specs || [], fits = b.fits || [], pops = b.pops || [];
       const bestIdx = cents.length ? cents.indexOf(Math.max(...cents)) : -1;
       const elig = (i) => (cents[i] ?? 0) >= centMin && b.loans[i] >= minLoans;
-      const bars = profAges.map((a, i) => `<i class="${i === bestIdx ? 'on ' : ''}${b.obs[i] ? '' : 'miss'}" style="height:${Math.max(4, Math.round(100 * b.prof[i] / max))}%" title="${a}세 ${(100 * b.prof[i]).toFixed(1)}% · ${b.loans[i].toLocaleString()}건 · 위치 ${Math.floor((cents[i] ?? 0) * 100)}%"></i>`).join('');
+      const bars = profAges.map((a, i) => `<i class="${i === bestIdx ? 'on ' : ''}${b.obs[i] ? '' : 'miss'}" style="height:${Math.max(4, Math.round(100 * b.prof[i] / max))}%" title="${a}세 ${(100 * b.prof[i]).toFixed(1)}% · ${b.loans[i].toLocaleString()}건 · 적합도 ${Math.floor((cents[i] ?? 0) * 100)}%"></i>`).join('');
       const axis = profAges.map((a) => `<span>${a}세</span>`).join('');
       const row = (name, cells) => `<tr><th style="${th}">${name}</th>${cells.join('')}</tr>`;
       const table = [
         row('나이', profAges.map((a) => `<td style="${td}">${a}</td>`)),
         row('대출', b.loans.map((v, i) => `<td style="${td}">${b.obs[i] ? v.toLocaleString() : '0'}</td>`)),
-        row('이 나이 위치', cents.map((v) => `<td style="${td}${v >= centMin ? ';font-weight:600;color:var(--accent2)' : ''}">${Math.floor(v * 100)}%</td>`)),
-        row('<b>추천도</b>', fits.map((v, i) => `<td style="${td}${elig(i) ? ';font-weight:700;color:var(--accent)' : ''}">${elig(i) ? v.toLocaleString() : '–'}</td>`)),
+        row('연령 적합도', cents.map((v) => `<td style="${td}${v >= centMin ? ';font-weight:600;color:var(--accent2)' : ''}">${Math.floor(v * 100)}%</td>`)),
+        row(`적합도 점수(${wCent})`, cents.map((v) => `<td style="${td}">${(v * wCent).toFixed(1)}</td>`)),
+        row(`인기 점수(${wPop})`, pops.map((v, i) => `<td style="${td}">${b.obs[i] ? Number(v).toFixed(1) : '–'}</td>`)),
+        row('<b>추천도(100)</b>', fits.map((v, i) => `<td style="${td}${elig(i) ? ';font-weight:700;color:var(--accent)' : ''}">${elig(i) ? Number(v).toFixed(1) : '–'}</td>`)),
         row('집중도', specs.map((v) => `<td style="${td}">${v.toFixed(1)}</td>`)),
         row('lift(참고)', (b.lifts || []).map((v) => `<td style="${td}">${v.toFixed(2)}</td>`)),
       ].join('');
@@ -65,7 +69,7 @@ const regionNames: Record<string, string> = (meta as any).region_names ?? {};
           <h3 style="font-size:14px;margin:16px 0 4px">나이별 선택 비중 (코호트 크기 보정 γ=${gamma}, 스무딩)</h3>
           <div class="bars" style="height:80px">${bars}</div><div class="axis">${axis}</div>
           <div style="overflow-x:auto"><table style="font-size:12px;margin-top:12px;border-collapse:collapse">${table}</table></div>
-          <p class="sub" style="font-size:12px;margin-top:8px"><b>추천도</b> = 그 나이 대출수 × 이 나이 위치. 위치 ${Math.round(centMin * 100)}% 미만이거나 대출 ${minLoans}건 미만인 나이는 후보에서 빠집니다(–). <b>이 나이 위치</b>는 독자 분포에서 그 나이가 중앙에 얼마나 가까운지, <b>집중도</b>는 13개 나이에 고르게 퍼졌을 때 1입니다.</p>
+          <p class="sub" style="font-size:12px;margin-top:8px"><b>추천도</b>(100점) = 적합도 점수(${wCent} × 연령 적합도) + 인기 점수(${wPop} × log 대출수 ÷ log 그 나이 후보 최대 대출수). 나이마다 최대를 기준으로 환산해 나이끼리 비교할 수 있습니다. 적합도 ${Math.round(centMin * 100)}% 미만이거나 대출 ${minLoans}건 미만인 나이는 후보에서 빠집니다(–). <b>연령 적합도</b>는 이 책 독자 분포에서 그 나이가 중앙에 얼마나 가까운지(중앙 100%, 양 끝 0%)이고, <b>집중도</b>는 13개 나이에 고르게 퍼졌을 때 1입니다.</p>
           ${b.detail ? `<p style="font-size:13px"><a href="${esc(b.detail)}" target="_blank" rel="noopener" style="color:var(--accent2)">정보나루 도서 상세 →</a></p>` : ''}
         </div>
       </div>

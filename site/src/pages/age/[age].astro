@@ -21,6 +21,8 @@ const regionNames: Record<string, string> = (meta as any).region_names ?? {};
 const holdRegions: string[] = holdings.regions ?? [];
 const nEligible: number = data.n_eligible ?? 0;
 const nIndex: number = data.n_index ?? 0;
+const wCent: number = (meta as any).w_cent ?? 50;
+const wPop: number = (meta as any).w_pop ?? 50;
 const groups: Record<string, any[]> = {};
 for (const row of facets.kdc2 as any[]) { const g = row[2] || '기타'; (groups[g] ??= []).push(row); }
 const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: number, r: any) => s + r[3], 0)) - (groups[x].reduce((s: number, r: any) => s + r[3], 0)));
@@ -29,8 +31,8 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
   <h2>{label}</h2>
   {age === 1 && <div class="notice">0세 카드 대출은 생년이 없는 학급·기관 단체대출이 대부분이라 순위에서 제외했습니다. 이 페이지는 1세(12~23개월) 카드 대출을 기준으로 하며, 상위권은 대부분 0세부터 보는 아기 그림책입니다.</div>}
   <p class="sub">
-    <b>딱 맞는 책</b>은 {label}가 이 책 독자 분포의 중심 가까이에 있는 책(위치 {centMinPct}% 이상, 대출 {minLoans}건 이상)만 골라 <b>{label} 대출수 × 위치</b> 순으로 정렬한 목록입니다.
-    이미 지난 어린 책은 강하게, 앞으로 볼 큰 책은 완만하게 내려갑니다.
+    <b>딱 맞는 책</b>은 {label}에 대한 <b>연령 적합도</b>(이 책 독자 분포에서 {label}가 중앙에 얼마나 가까운지, 0~100%)가 {centMinPct}% 이상이고 대출 {minLoans}건 이상인 책만 골라 <b>추천도</b>(100점 = 적합도 점수 {wCent} + 인기 점수 {wPop}, 인기는 {label} 대출수를 로그로 그 나이 최대 대비 환산) 순으로 정렬한 목록입니다.
+    적합도는 이미 지난 어린 책에는 엄격하게, 앞으로 볼 큰 책에는 너그럽게 매깁니다.
     <b>많이 빌린 책</b>은 {label} 대출 건수순입니다. 후보 {nEligible.toLocaleString()}권 전체를 아래로 내려가며 볼 수 있습니다.
   </p>
 
@@ -150,7 +152,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       catch (e) { $('#listInfo').textContent = '목록 데이터를 불러오지 못했습니다. 새로고침(Ctrl+F5) 해 주세요.'; console.error(e); return; }
       current = compute(); shown = 0;
       $('#teaser').hidden = true; $('#list').innerHTML = '';
-      const order = state.tab === 'popular' ? `${label} 대출 건수순` : '추천도(대출 × 위치)순';
+      const order = state.tab === 'popular' ? `${label} 대출 건수순` : '추천도(적합도 + 인기, 100점)순';
       const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만(소장 정보가 있는 핵심 도서 기준)` : '';
       $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}`;
       renderMore();

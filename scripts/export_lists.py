@@ -13,9 +13,9 @@ for a in sorted(ranks.age.unique()):
     r = ranks[ranks.age == a]
     for kind, sel in (("fit", diversify(r[r.fit_rank.notna()].nsmallest(300, "fit_rank"), books, 100)),
                       ("pop", diversify(r[r.observed & (r.cent >= 0.2)].nsmallest(300, "pop_rank"), books, 100))):
-        df = sel[["isbn13", "loan_count", "cent", "spec", "fit_score"]].merge(books[cols], left_on="isbn13", right_index=True)
+        df = sel[["isbn13", "loan_count", "cent", "pop_score", "fit_score"]].merge(books[cols], left_on="isbn13", right_index=True)
         df.insert(0, "rank", range(1, len(df) + 1))
-        df.rename(columns={"loan_count": f"{a}세_대출", "cent": "중심도", "spec": "집중도", "fit_score": "점수",
+        df.rename(columns={"loan_count": f"{a}세_대출", "cent": "적합도", "pop_score": "인기점수(50)", "fit_score": "추천도(100)",
                            "bookname": "제목", "authors": "저자", "publisher": "출판사",
                            "publication_year": "출판년", "band": "추천연령", "peak_age": "최다선택나이", "shape": "분포", "is_picture": "그림책",
                            "total_loans": "총대출"}).to_csv(OUT / f"age{a}_{kind}.csv", index=False, encoding="utf-8-sig")

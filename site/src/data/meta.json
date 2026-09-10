@@ -1,6 +1,6 @@
 {
  "generated": "2026-09-10",
- "build": "20260910173520",
+ "build": "20260910204045",
  "sample": false,
  "ages": [
   1,
@@ -36,10 +36,12 @@
   13
  ],
  "n_books_total": 101790,
- "n_books_site": 1314,
+ "n_books_site": 2106,
  "cent_min": 0.3,
  "min_loans": 30,
  "gamma": 1.0,
+ "w_cent": 50.0,
+ "w_pop": 50.0,
  "kdc2_names": {
   "00": "지식 일반",
   "01": "도서·서지",

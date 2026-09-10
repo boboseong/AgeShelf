@@ -21,7 +21,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_metrics import CENT_MIN, GAMMA, MIN_LOANS_AT_AGE  # noqa: E402
+from build_metrics import CENT_MIN, GAMMA, MIN_LOANS_AT_AGE, W_CENT, W_POP  # noqa: E402
 from tags import KDC1_NAME, KDC2_NAME  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -126,7 +126,8 @@ def book_card(b: pd.Series) -> dict:
         "lifts": [float(b[f"lift_{a}"]) for a in ALL_AGES],
         "cents": [float(b.get(f"cent_{a}", 0.0)) for a in ALL_AGES],
         "specs": [float(b.get(f"spec_{a}", 0.0)) for a in ALL_AGES],
-        "fits": [int(round(float(b.get(f"fit_{a}", 0.0)))) for a in ALL_AGES],
+        "fits": [round(float(b.get(f"fit_{a}", 0.0)), 1) for a in ALL_AGES],
+        "pops": [round(float(b.get(f"pop_{a}", 0.0)), 1) for a in ALL_AGES],
         "obs": [bool(b[f"obs_{a}"]) for a in ALL_AGES],
     }
 
@@ -178,7 +179,7 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
             cover_pack(b.bookImageURL), b.band, round(float(b.get("median_age", b.peak_age)), 1),
             SHAPE_CODE.get(str(b.get("shape", "")), 0), 1 if bool(b.is_picture) else 0, str(b.get("kdc2", "") or ""),
             FORMS.index(form) if form in FORMS else 4, flag_bits(b),
-            int(round(float(x.fit_score))) if pd.notna(x.fit_score) else 0,
+            round(float(x.fit_score), 1) if pd.notna(x.fit_score) else 0,
             int(x.pop_rank) if pd.notna(x.pop_rank) else 0, round(float(x.cent), 2), int(x.loan_count), sid, prof_q(b),
             1 if pd.notna(x.fit_rank) else 0,
         ])
@@ -303,7 +304,7 @@ def main():
     meta = {"generated": dt.date.today().isoformat(), "build": dt.datetime.now().strftime("%Y%m%d%H%M%S"), "sample": args.sample, "ages": show,
             "labels": {str(a): AGE_LABELS.get(a, f"{a}세") for a in show},
             "profile_ages": ALL_AGES, "n_books_total": int(len(books)), "n_books_site": len(used),
-            "cent_min": CENT_MIN, "min_loans": MIN_LOANS_AT_AGE, "gamma": GAMMA,
+            "cent_min": CENT_MIN, "min_loans": MIN_LOANS_AT_AGE, "gamma": GAMMA, "w_cent": W_CENT, "w_pop": W_POP,
             "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS,
             "forms": FORMS, "teaser_n": TEASER_N,
             "holdings": holdings_meta, "region_names": REGION_NAMES,
