@@ -1,7 +1,9 @@
-"""books_metrics / age_ranks / book_tags → 사이트 데이터
+"""books_metrics / age_ranks / book_tags / holdings → 사이트 데이터
 
-  site/src/data/meta.json, ages/{a}.json(기본 목록 + 필터 facet), books.json(정적 상세 페이지용)
-  site/public/data/search_index.json, books/NNN.json(전체 상세 조각), pool/{a}.json(나이별 확장 풀: 필터용)
+  site/src/data/meta.json, ages/{a}.json(첫 화면 60권 + 필터 facet), books.json(정적 상세 페이지용 1,212권)
+  site/public/data/index/{a}.json   나이별 얇은 색인: 후보 전체 + 인기순 상위 (필터·정렬·더 보기용)
+  site/public/data/search_index.json 검색 색인(전체 도서, 압축 행)
+  site/public/data/books/NNN.json   전체 상세 조각,  libs.json / libs/{code}.json 소장 정보
 
 실행: python scripts/export_site.py            # data/processed 사용
       python scripts/export_site.py --sample   # data/sample (합성) 사용
@@ -29,12 +31,21 @@ SHOW_AGES = list(range(1, 8))     # 사이트 노출 1~7세 (0세 코호트는 �
 AGE_LABELS = {1: "0~1세"}
 ALL_AGES = list(range(1, 14))     # 프로필 막대 (실제로는 books 컬럼에서 재계산)
 TOP_N = 300                       # 나이별 fit/pop 각 300권 → 상세 페이지 생성 대상
-SEARCH_MAX = 30000                # 검색 색인에 넣을 도서 수 (총대출 상위)
+TEASER_N = 60                     # 나이 페이지 HTML 에 박는 첫 화면 카드 수 (나머지는 색인에서 클라이언트가 그림)
+POP_EXTRA = 3000                  # 색인에 추가로 넣는 인기순 상위(자격 미달 포함)
+SEARCH_MAX = None                 # 검색 색인 도서 수 (None = 전체)
 SERIES_CAP = 3                    # 같은 시리즈(전집)는 목록당 최대 3권
-POOL_PER_FACET = 30               # 나이 × (세부 라벨 / 형태 / 출판사 / 성격) 마다 상위 30권
-POOL_PUBLISHERS = 40              # 나이별 출판사 facet 수 (그 나이 후보 도서 수 기준 상위)
+POOL_PUBLISHERS = 60              # 나이별 출판사 facet 수 (그 나이 후보 도서 수 기준 상위)
 FLAG_TAGS = ["요즘 인기", "베스트셀러", "여러 나이 스테디", "10년 스테디셀러", "먼저 보기 좋은", "커서도 보는"]
 FLAG_CODE = {t: i for i, t in enumerate(FLAG_TAGS)}
+FORMS = ["그림책", "전집", "단행본", "도감", "기타"]
+SHAPE_CODE = {"대칭": 0, "더 큰 아이 쪽으로 넓음": 1, "더 어린 아이부터 봄": 2}
+COVER_PREFIX = ["https://image.aladin.co.kr/product/", "http://image.aladin.co.kr/product/",
+                "https://bookthumb-phinf.pstatic.net/cover/", "http://bookthumb-phinf.pstatic.net/cover/"]
+Q36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+REGION_NAMES = {"11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주", "25": "대전", "26": "울산", "29": "세종",
+                "31": "경기", "32": "강원", "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북", "38": "경남", "39": "제주"}
+HOLDINGS: dict[str, list[str]] = {}   # isbn13 → libCode 목록 (핵심 도서만)
 
 
 def series_key(b: pd.Series) -> str:
@@ -70,7 +81,27 @@ def flags_of(b: pd.Series) -> list[str]:
     return [t for t in FLAG_TAGS if bool(b.get(t, False))]
 
 
-HOLDINGS: dict[str, list[str]] = {}   # isbn13 → libCode 목록 (핵심 도서만)
+def flag_bits(b: pd.Series) -> int:
+    bits = 0
+    for t in FLAG_TAGS:
+        if bool(b.get(t, False)):
+            bits |= 1 << FLAG_CODE[t]
+    return bits
+
+
+def prof_q(b: pd.Series) -> str:
+    """나이별 비중(0~1)을 최고점 대비 0~35 로 양자화한 13글자 문자열 (막대 표시용)."""
+    vals = [float(b[f"prof_{a}"]) for a in ALL_AGES]
+    m = max(vals) or 1.0
+    return "".join(Q36[min(35, int(round(35 * v / m)))] for v in vals)
+
+
+def cover_pack(url) -> list:
+    url = str(url or "")
+    for i, pre in enumerate(COVER_PREFIX):
+        if url.startswith(pre):
+            return [i, url[len(pre):]]
+    return [-1, url]
 
 
 def book_card(b: pd.Series) -> dict:
@@ -97,21 +128,6 @@ def book_card(b: pd.Series) -> dict:
     }
 
 
-def pool_card(b: pd.Series, x) -> dict:
-    """나이별 확장 풀용 압축 카드 (x: 그 나이의 ranks 행, itertuples)."""
-    return {
-        "i": b.isbn13, "t": (b.bookname or "").strip(), "au": (b.authors or "")[:40],
-        "pu": (b.publisher if (b.publisher or "").strip() else "(출판사 정보 없음)")[:20], "yr": str(b.publication_year or ""),
-        "cv": b.bookImageURL or "", "band": b.band, "med": round(float(b.get("median_age", b.peak_age)), 1),
-        "sh": str(b.get("shape", "")), "pic": 1 if bool(b.is_picture) else 0,
-        "k2": str(b.get("kdc2", "") or ""), "fm": str(b.get("form", "") or ""), "pn": str(b.get("publisher_norm", "") or ""),
-        "fl": [FLAG_CODE[t] for t in flags_of(b)], "sk": series_key(b),
-        "ln": int(x.loan_count), "ce": round(float(x.cent), 2), "sp": round(float(x.spec), 1), "fit": int(round(float(x.fit_score))),
-        "pr": int(x.pop_rank) if pd.notna(x.pop_rank) else 0,
-        "prof": [int(round(100 * float(b[f"prof_{a}"]))) for a in ALL_AGES],
-    }
-
-
 def write_shards(books: pd.DataFrame, out_dir: Path, nshards: int = 1000) -> None:
     """전체 도서 상세 데이터를 ISBN 끝 세 자리로 나눈 조각 JSON (public/data/books/NNN.json, 약 90KB)."""
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -134,33 +150,50 @@ def write_shards(books: pd.DataFrame, out_dir: Path, nshards: int = 1000) -> Non
     print(f"book shards: {len(books):,} books → {nshards} files, {total / 1024 / 1024:.1f} MB")
 
 
-def build_pool(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple[dict, dict]:
-    """나이 a 의 확장 풀과 facet 요약. 후보(fit_rank 有)를 fit 순으로 두고 facet 마다 상위 POOL_PER_FACET 권을 합집합."""
+def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple[dict, dict]:
+    """나이 a 의 얇은 색인(후보 전체 + 인기순 상위)과 facet 요약.
+    행: [isbn, 제목, 저자, 출판사idx, 연도, 표지[prefix,rest], 밴드, 중앙나이, 형태코드, 그림책, kdc2, 형태idx,
+         성격비트, 추천도, 인기순위, 위치, 대출, 시리즈id, 비중13자, 자격]"""
     el = ranks_a[ranks_a.fit_rank.notna()].sort_values("fit_rank")
-    el = el.merge(books[["kdc2", "kdc2_name", "kdc1_name", "form", "publisher_norm", *FLAG_TAGS]],
-                  left_on="isbn13", right_index=True)
-    chosen: set[str] = set(el.head(TOP_N * 3).isbn13)          # 전체 상위(시리즈 캡 전 3배 여유)
+    pop_extra = ranks_a[ranks_a.fit_rank.isna() & ranks_a.pop_rank.notna()].nsmallest(POP_EXTRA, "pop_rank")
+    src = pd.concat([el, pop_extra], ignore_index=True)
+    pubs: dict[str, int] = {}
+    pub_names: list[list[str]] = []
+    series: dict[str, int] = {}
+    rows = []
+    for x in src.itertuples():
+        b = books.loc[x.isbn13]
+        pn = str(b.get("publisher_norm", "") or "")
+        disp = (b.publisher if (b.publisher or "").strip() else "(출판사 정보 없음)")[:20]
+        if pn not in pubs:
+            pubs[pn] = len(pub_names)
+            pub_names.append([pn, disp])
+        sid = series.setdefault(series_key(b), len(series))
+        form = str(b.get("form", "") or "")
+        rows.append([
+            x.isbn13, (b.bookname or "").strip(), (b.authors or "")[:30], pubs[pn], str(b.publication_year or ""),
+            cover_pack(b.bookImageURL), b.band, round(float(b.get("median_age", b.peak_age)), 1),
+            SHAPE_CODE.get(str(b.get("shape", "")), 0), 1 if bool(b.is_picture) else 0, str(b.get("kdc2", "") or ""),
+            FORMS.index(form) if form in FORMS else 4, flag_bits(b),
+            int(round(float(x.fit_score))) if pd.notna(x.fit_score) else 0,
+            int(x.pop_rank) if pd.notna(x.pop_rank) else 0, round(float(x.cent), 2), int(x.loan_count), sid, prof_q(b),
+            1 if pd.notna(x.fit_rank) else 0,
+        ])
+    elm = el.merge(books[["kdc2", "form", "publisher_norm", *FLAG_TAGS]], left_on="isbn13", right_index=True)
     facets: dict[str, list] = {"kdc2": [], "form": [], "pub": [], "flag": []}
-    for k2, g in el[el.kdc2 != ""].groupby("kdc2"):
-        chosen |= set(g.head(POOL_PER_FACET).isbn13)
+    for k2, g in elm[elm.kdc2 != ""].groupby("kdc2"):
         facets["kdc2"].append([k2, KDC2_NAME.get(k2, k2), KDC1_NAME.get(k2[:1], ""), int(len(g))])
-    for fm, g in el.groupby("form"):
-        chosen |= set(g.head(POOL_PER_FACET).isbn13)
+    for fm, g in elm.groupby("form"):
         facets["form"].append([fm, int(len(g))])
-    top_pubs = el[el.publisher_norm != ""].publisher_norm.value_counts().head(POOL_PUBLISHERS)
-    for pn in top_pubs.index:
-        g = el[el.publisher_norm == pn]
-        chosen |= set(g.head(POOL_PER_FACET).isbn13)
-        facets["pub"].append([pn, int(len(g))])
+    for pn, cnt in elm[elm.publisher_norm != ""].publisher_norm.value_counts().head(POOL_PUBLISHERS).items():
+        facets["pub"].append([pn, int(cnt)])
     for t in FLAG_TAGS:
-        g = el[el[t].astype(bool)]
-        chosen |= set(g.head(POOL_PER_FACET).isbn13)
-        facets["flag"].append([FLAG_CODE[t], t, int(len(g))])
+        facets["flag"].append([FLAG_CODE[t], t, int(elm[t].astype(bool).sum())])
     facets["kdc2"].sort(key=lambda r: (r[0][:1], -r[3]))
     facets["form"].sort(key=lambda r: -r[1])
-    pool_rows = el[el.isbn13.isin(chosen)]
-    cards = [pool_card(books.loc[x.isbn13], x) for x in pool_rows.itertuples()]
-    return {"age": a, "n_eligible": int(len(el)), "books": cards}, facets
+    index = {"age": a, "n_eligible": int(len(el)), "n": len(rows), "pubs": pub_names, "forms": FORMS,
+             "cover_prefix": COVER_PREFIX, "ages": ALL_AGES, "rows": rows}
+    return index, facets
 
 
 def export_holdings(src: Path) -> dict:
@@ -179,6 +212,7 @@ def export_holdings(src: Path) -> dict:
     d.mkdir(parents=True, exist_ok=True)
     for code, isbns in by_lib.items():
         (d / f"{code}.json").write_text(json.dumps({"n": len(isbns), "isbns": isbns}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
     def s_(v):
         return "" if v is None or (isinstance(v, float) and pd.isna(v)) else str(v)
     rows = []
@@ -218,7 +252,7 @@ def main():
     show = [a for a in SHOW_AGES if a in ALL_AGES]
 
     (SITE_DATA / "ages").mkdir(parents=True, exist_ok=True)
-    (PUB / "pool").mkdir(parents=True, exist_ok=True)
+    (PUB / "index").mkdir(parents=True, exist_ok=True)
     used: set[str] = set()
     for a in show:
         r = ranks[ranks.age == a]
@@ -232,43 +266,44 @@ def main():
                 c["cent"] = float(x.get("cent", 0.0)); c["spec"] = float(x.get("spec", 0.0))
                 c["fit"] = float(x.fit_score); c["observed"] = bool(x.observed); out.append(c); used.add(x.isbn13)
             return out
-        pool, facets = build_pool(a, r, books)
-        payload = {"age": a, "popular": rows(pop), "fit": rows(fit), "facets": facets, "n_eligible": pool["n_eligible"]}
+        fit_rows, pop_rows = rows(fit), rows(pop)          # used(상세 페이지 대상)은 300권 기준으로 유지
+        index, facets = write_age_index(a, r, books)
+        payload = {"age": a, "popular": pop_rows[:TEASER_N], "fit": fit_rows[:TEASER_N], "facets": facets,
+                   "n_eligible": index["n_eligible"], "n_index": index["n"]}
         (SITE_DATA / "ages" / f"{a}.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-        pp = PUB / "pool" / f"{a}.json"
-        pp.write_text(json.dumps(pool, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        print(f"  {a}세 풀 {len(pool['books']):,}권 ({pp.stat().st_size / 1024:.0f} KB), facet kdc2 {len(facets['kdc2'])} / 출판사 {len(facets['pub'])}")
+        pp = PUB / "index" / f"{a}.json"
+        pp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"  {a}세 색인 {index['n']:,}행 (후보 {index['n_eligible']:,}) {pp.stat().st_size / 1024 / 1024:.1f} MB, "
+              f"facet kdc2 {len(facets['kdc2'])} / 출판사 {len(facets['pub'])}")
 
     detail = {i: book_card(books.loc[i]) for i in sorted(used)}
     (SITE_DATA / "books.json").write_text(json.dumps(detail, ensure_ascii=False), encoding="utf-8")
 
-    # 검색 색인: [isbn, 제목, 저자, 출판사, 출판년, 밴드, peak, 총대출, prof%, 상세페이지, 그림책, seq, kdc2, 형태, 출판사정규화, 성격코드]
+    # 검색 색인(전체 도서, 압축 행): [isbn, 제목, 저자, 출판사, 연도, 밴드, peak, 총대출, 상세페이지, 그림책, kdc2, 형태idx, 성격비트, 비중13자]
     idx = []
-    top_books = books.sort_values("total_loans", ascending=False).head(SEARCH_MAX)
+    top_books = books.sort_values("total_loans", ascending=False)
+    if SEARCH_MAX:
+        top_books = top_books.head(SEARCH_MAX)
     for b in top_books.itertuples():
         row = books.loc[b.isbn13]
-        idx.append([b.isbn13, (b.bookname or "").strip(), (b.authors or "")[:40], (b.publisher or "")[:20],
+        form = str(row.get("form", "") or "")
+        idx.append([b.isbn13, (b.bookname or "").strip(), (b.authors or "")[:30], (b.publisher or "")[:15],
                     str(b.publication_year or ""), b.band, int(b.peak_age), int(b.total_loans),
-                    [int(round(100 * float(getattr(b, f"prof_{a}")))) for a in ALL_AGES],
                     1 if b.isbn13 in used else 0, 1 if bool(b.is_picture) else 0,
-                    (b.bookDtlUrl or "").split("seq=")[-1] if "seq=" in (b.bookDtlUrl or "") else "",
-                    str(row.get("kdc2", "") or ""), str(row.get("form", "") or ""), str(row.get("publisher_norm", "") or ""),
-                    [FLAG_CODE[t] for t in flags_of(row)]])
+                    str(row.get("kdc2", "") or ""), FORMS.index(form) if form in FORMS else 4, flag_bits(row), prof_q(row)])
     PUB.mkdir(parents=True, exist_ok=True)
     (PUB / "search_index.json").write_text(json.dumps(idx, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     write_shards(books, PUB / "books")
     (SITE_DATA / "search_meta.json").write_text(json.dumps({"n": len(idx)}), encoding="utf-8")
-    print(f"search index: {len(idx):,} books, {(PUB / 'search_index.json').stat().st_size / 1024:.0f} KB → site/public/data/")
+    print(f"search index: {len(idx):,} books, {(PUB / 'search_index.json').stat().st_size / 1024 / 1024:.1f} MB → site/public/data/")
 
     meta = {"generated": dt.date.today().isoformat(), "build": dt.datetime.now().strftime("%Y%m%d%H%M%S"), "sample": args.sample, "ages": show,
             "labels": {str(a): AGE_LABELS.get(a, f"{a}세") for a in show},
             "profile_ages": ALL_AGES, "n_books_total": int(len(books)), "n_books_site": len(used),
             "cent_min": CENT_MIN, "min_loans": MIN_LOANS_AT_AGE, "gamma": GAMMA,
             "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS,
-            "forms": ["그림책", "전집", "단행본", "도감", "기타"],
-            "holdings": holdings_meta,
-            "region_names": {"11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주", "25": "대전", "26": "울산", "29": "세종",
-                             "31": "경기", "32": "강원", "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북", "38": "경남", "39": "제주"},
+            "forms": FORMS, "teaser_n": TEASER_N,
+            "holdings": holdings_meta, "region_names": REGION_NAMES,
             "source": "도서관정보나루(data4library.kr) 공공도서관 대출 데이터, 전국, 2014~"}
     (SITE_DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"export → {SITE_DATA}  ages={len(show)}  books={len(used)}  sample={args.sample}")
