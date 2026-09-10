@@ -34,7 +34,7 @@ TOP_N = 300                       # 나이별 fit/pop 각 300권 → 상세 페�
 TEASER_N = 60                     # 나이 페이지 HTML 에 박는 첫 화면 카드 수 (나머지는 색인에서 클라이언트가 그림)
 POP_EXTRA = 3000                  # 색인에 추가로 넣는 인기순 상위(자격 미달 포함)
 SEARCH_MAX = None                 # 검색 색인 도서 수 (None = 전체)
-SERIES_CAP = 3                    # 같은 시리즈(전집)는 목록당 최대 3권
+SERIES_CAP = None                 # 시리즈당 권수 제한 (None = 제한 없음, 사용자 결정 2026-09-10)
 POOL_PUBLISHERS = 60              # 나이별 출판사 facet 수 (그 나이 후보 도서 수 기준 상위)
 FLAG_TAGS = ["요즘 인기", "베스트셀러", "여러 나이 스테디", "10년 스테디셀러", "먼저 보기 좋은", "커서도 보는"]
 FLAG_CODE = {t: i for i, t in enumerate(FLAG_TAGS)}
@@ -64,7 +64,9 @@ def series_key(b: pd.Series) -> str:
 
 
 def diversify(df: pd.DataFrame, books: pd.DataFrame, n: int, cap: int = SERIES_CAP) -> pd.DataFrame:
-    """순위 순서를 유지하면서 시리즈 키당 cap 권까지만 남기고 n 권을 채운다."""
+    """순위 순서를 유지하면서 시리즈 키당 cap 권까지만 남기고 n 권을 채운다. cap 이 없으면 상위 n 권 그대로."""
+    if not cap:
+        return df.head(n)
     keep, seen = [], {}
     for i, isbn in enumerate(df.isbn13):
         k = series_key(books.loc[isbn])

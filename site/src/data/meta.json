@@ -1,6 +1,6 @@
 {
  "generated": "2026-09-10",
- "build": "20260910164807",
+ "build": "20260910173520",
  "sample": false,
  "ages": [
   1,
@@ -36,7 +36,7 @@
   13
  ],
  "n_books_total": 101790,
- "n_books_site": 1212,
+ "n_books_site": 1314,
  "cent_min": 0.3,
  "min_loans": 30,
  "gamma": 1.0,

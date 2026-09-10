@@ -126,7 +126,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
         (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub));
       if (state.tab === 'popular') rows = rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
       else rows = rows.filter((b) => b.elig).sort((x, y) => y.fit - x.fit);
-      return window.AgeShelfDiversify(rows, 3, 0);
+      return rows;
     }
     function renderMore() {
       const chunk = current.slice(shown, shown + PAGE);
@@ -152,7 +152,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       $('#teaser').hidden = true; $('#list').innerHTML = '';
       const order = state.tab === 'popular' ? `${label} 대출 건수순` : '추천도(대출 × 위치)순';
       const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만(소장 정보가 있는 핵심 도서 기준)` : '';
-      $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order} · 시리즈당 최대 3권${libNote}`;
+      $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}`;
       renderMore();
     }
     // 도서관 피커
