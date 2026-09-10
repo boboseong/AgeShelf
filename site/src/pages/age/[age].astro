@@ -175,7 +175,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const s = state[c.dataset.f]; s.has(c.dataset.v) ? s.delete(c.dataset.v) : s.add(c.dataset.v); renderFiltered();
     }));
     $('#pubSelect')?.addEventListener('change', (e) => { state.pub = e.target.value; renderFiltered(); });
-    $('#clearFilters')?.addEventListener('click', () => { state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.pub = ''; renderFiltered(); });
+    $('#clearFilters')?.addEventListener('click', () => {
+      state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.pub = '';
+      state.lib = null; window.AgeShelfLib?.set(null); const ls = $('#libSelect'); if (ls) ls.value = '';
+      renderFiltered();
+    });
     document.querySelectorAll('.tabs button').forEach((btn) => btn.addEventListener('click', () => { tab = btn.dataset.tab; renderFiltered(); }));
     document.addEventListener('click', (e) => {
       const t = e.target.closest('.badge.tag'); if (!t) return;

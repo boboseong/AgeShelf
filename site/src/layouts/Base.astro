@@ -14,6 +14,7 @@ const current = Astro.url.pathname;
   <style is:global>
     :root { --bg:#fbfaf7; --fg:#22211f; --muted:#6f6b63; --line:#e6e2da; --accent:#d9722b; --accent2:#3f7d6a; --card:#fff; }
     * { box-sizing:border-box; }
+    [hidden] { display:none !important; }   /* .grid 등 display 클래스가 hidden 속성을 이기지 못하게 */
     body { margin:0; background:var(--bg); color:var(--fg); font-family: "Pretendard", -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; line-height:1.5; }
     a { color:inherit; text-decoration:none; }
     header { border-bottom:1px solid var(--line); background:#fff; position:sticky; top:0; z-index:2; }
