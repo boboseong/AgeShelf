@@ -60,7 +60,7 @@ const pool = Object.values(books as Record<string, any>).map((b) => ({
         const max = Math.max(...b.prof);
         const bars = profAges.map((a, k) => `<i class="${(a === a1 || a === a2) ? 'on ' : ''}${b.obs[k] ? '' : 'miss'}" style="height:${Math.max(6, Math.round(100 * b.prof[k] / max))}%" title="${a}세 ${(100*b.prof[k]).toFixed(0)}%"></i>`).join('');
         const axis = profAges.map((a) => `<span>${a}</span>`).join('');
-        return `<a class="card" href="${base}/book/${b.isbn13}">
+        return `<a class="card" href="${base}/b/?isbn=${b.isbn13}">
           <div>${b.cover ? `<img class="cover" src="${b.cover}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
           <div><div class="rank">#${i + 1} · 보간 대출 ${l.toLocaleString()}건 · 이 나이 위치 ${Math.floor(cent * 100)}%</div>
           <div class="title">${esc(b.title)}</div><div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)}</div>

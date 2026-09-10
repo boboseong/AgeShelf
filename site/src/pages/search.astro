@@ -57,7 +57,7 @@ const nBooks: number = searchMeta.n;
       const max = Math.max(...prof, 1);
       const bars = profAges.map((a, k) => `<i style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
       const axis = profAges.map((a) => `<span>${a}</span>`).join('');
-      const href = b.hasPage ? `${base}/book/${b.isbn}` : `${base}/b/?isbn=${b.isbn}`;
+      const href = `${base}/b/?isbn=${b.isbn}`;
       const chips = [];
       if (b.k2 && kdc2Names[b.k2]) chips.push(`<span class="badge tag">${esc(kdc2Names[b.k2])}</span>`);
       if (b.fm) chips.push(`<span class="badge tag">${esc(b.fm)}</span>`);

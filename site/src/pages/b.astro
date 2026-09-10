@@ -71,7 +71,7 @@ const regionNames: Record<string, string> = (meta as any).region_names ?? {};
       </div>
       <section id="holdings" class="card" style="grid-template-columns:1fr;max-width:760px;margin-top:12px" hidden>
         <div><h3 style="font-size:15px;margin:0 0 6px">소장 도서관 <span id="holdCount" class="sub" style="margin:0"></span></h3>
-        <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 수집 시점의 ISBN 기준입니다. 지금 대출 가능한지는 도서관 홈페이지에서 확인하세요.</p>
+        <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 수집 시점의 ISBN 기준입니다. 지금 대출 가능한지는 도서관 홈페이지에서 확인하세요. <button class="chip" id="holdNear" type="button">내 위치에서 가까운 순</button></p>
         <div id="holdList" style="font-size:13px"></div></div>
       </section>`;
       renderHoldings(b.libs || []);
@@ -79,13 +79,25 @@ const regionNames: Record<string, string> = (meta as any).region_names ?? {};
     async function renderHoldings(codes) {
       if (!codes.length || !window.AgeShelfLib) return;
       const dir = await window.AgeShelfLib.directory(base); const set = new Set(codes);
-      const libs = dir.libs.filter((l) => set.has(l.code)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      let libs = dir.libs.filter((l) => set.has(l.code)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       const sec = document.getElementById('holdings'); if (!sec) return; sec.hidden = false;
       document.getElementById('holdCount').textContent = `${libs.length}곳`;
-      const byRegion = {}; libs.forEach((l) => { (byRegion[l.region] ??= []).push(l); });
-      document.getElementById('holdList').innerHTML = Object.entries(byRegion).map(([r, ls]) => `
-        <div style="margin:6px 0"><b>${esc(regionNames[r] || r)}</b> <span class="sub" style="margin:0">${ls.length}곳</span>
-        <div class="badges">${ls.map((l) => `<a class="badge" href="${l.home ? esc(l.home) : '#'}" ${l.home ? 'target="_blank" rel="noopener"' : ''} title="${esc(l.addr)}">${esc(l.name)}</a>`).join('')}</div></div>`).join('');
+      const mine = window.AgeShelfLib.get();
+      const draw = (sorted, withDist) => {
+        const byRegion = {}; sorted.forEach((l) => { (byRegion[l.region] ??= []).push(l); });
+        document.getElementById('holdList').innerHTML = Object.entries(byRegion).map(([r, ls]) => `
+          <div style="margin:6px 0"><b>${esc(regionNames[r] || r)}</b> <span class="sub" style="margin:0">${ls.length}곳</span>
+          <div class="badges">${ls.map((l) => `<a class="badge${mine && mine.code === l.code ? ' band' : ''}" href="${l.home ? esc(l.home) : '#'}" ${l.home ? 'target="_blank" rel="noopener"' : ''} title="${esc(l.addr)}${l.hours ? ' · ' + esc(l.hours) : ''}">${esc(l.name)}${withDist && l.d != null ? ` · ${l.d.toFixed(1)}km` : ''}</a>`).join('')}</div></div>`).join('');
+      };
+      draw(libs, false);
+      document.getElementById('holdNear')?.addEventListener('click', () => {
+        if (!navigator.geolocation) return alert('이 브라우저는 위치를 지원하지 않습니다.');
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const { latitude: la, longitude: lo } = pos.coords;
+          libs = libs.map((l) => ({ ...l, d: (l.lat && l.lon) ? window.AgeShelfLib.dist(la, lo, l.lat, l.lon) : null })).sort((a, b) => (a.d ?? 1e9) - (b.d ?? 1e9));
+          draw(libs, true);
+        }, () => alert('위치를 가져오지 못했습니다.'));
+      });
     }
     if (!isbn || isbn.length > 20) {
       root.innerHTML = '<p class="sub">ISBN 이 없습니다. <a href="' + base + '/search">검색으로 돌아가기</a></p>';

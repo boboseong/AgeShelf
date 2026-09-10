@@ -28,7 +28,7 @@
     if (b.fm) chips.push(`<span class="badge tag" data-f="form" data-v="${esc(b.fm)}">${esc(b.fm)}</span>`);
     const fl = Array.isArray(b.fl) ? b.fl : flagTags.map((_, i) => i).filter((i) => ((b.flb || 0) >> i) & 1);
     fl.slice(0, 2).forEach((c) => { if (flagTags[c]) chips.push(`<span class="badge tag flag" data-f="flag" data-v="${c}">${esc(flagTags[c])}</span>`); });
-    return `<a class="card" href="${base}/book/${esc(b.i)}" data-fallback="${base}/b/?isbn=${esc(b.i)}">
+    return `<a class="card" href="${base}/b/?isbn=${esc(b.i)}">
       <div>${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
       <div><div class="rank">#${rank} · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 이 나이 위치 ${pct}% (${centLabel(pct)})</div>
       <div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>

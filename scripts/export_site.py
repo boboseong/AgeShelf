@@ -1,6 +1,7 @@
 """books_metrics / age_ranks / book_tags / holdings → 사이트 데이터
 
-  site/src/data/meta.json, ages/{a}.json(첫 화면 60권 + 필터 facet), books.json(정적 상세 페이지용 1,212권)
+  site/src/data/meta.json, ages/{a}.json(첫 화면 60권 + 필터 facet), books.json(개월 수 페이지 풀: 나이별 상위 300권 합집합)
+  상세 페이지는 정적 생성 없이 /b/?isbn= 이 조각(books/NNN.json)에서 그린다 (2026-09-10 완전 전환)
   site/public/data/index/{a}.json   나이별 얇은 색인: 후보 전체 + 인기순 상위 (필터·정렬·더 보기용)
   site/public/data/search_index.json 검색 색인(전체 도서, 압축 행)
   site/public/data/books/NNN.json   전체 상세 조각,  libs.json / libs/{code}.json 소장 정보
@@ -30,7 +31,7 @@ PUB = ROOT / "site" / "public" / "data"
 SHOW_AGES = list(range(1, 8))     # 사이트 노출 1~7세 (0세 코호트는 기관 대출 오염으로 제외, 1세를 "0~1세"로 표기)
 AGE_LABELS = {1: "0~1세"}
 ALL_AGES = list(range(1, 14))     # 프로필 막대 (실제로는 books 컬럼에서 재계산)
-TOP_N = 300                       # 나이별 fit/pop 각 300권 → 상세 페이지 생성 대상
+TOP_N = 300                       # 나이별 fit/pop 각 300권 → books.json(개월 수 페이지 풀)에 포함
 TEASER_N = 60                     # 나이 페이지 HTML 에 박는 첫 화면 카드 수 (나머지는 색인에서 클라이언트가 그림)
 POP_EXTRA = 3000                  # 색인에 추가로 넣는 인기순 상위(자격 미달 포함)
 SEARCH_MAX = None                 # 검색 색인 도서 수 (None = 전체)
