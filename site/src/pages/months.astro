@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+import meta from '../data/meta.json';
+import books from '../data/books.json';
+import { SITE_BASE } from '../config';
+const base = SITE_BASE;
+// 개월 수 → 인접 두 연령 코호트(중심 a+0.5세)를 선형 보간해 점수를 다시 계산한다.
+const profAges: number[] = meta.profile_ages;
+const centMin: number = (meta as any).cent_min ?? 0.3;
+const minLoans: number = (meta as any).min_loans ?? 30;
+const pool = Object.values(books as Record<string, any>).map((b) => ({
+  isbn13: b.isbn13, title: b.title, authors: b.authors, publisher: b.publisher, year: b.year, cover: b.cover,
+  band: b.band, median: b.median ?? b.peak, shape: b.shape, picture: b.picture,
+  loans: b.loans, cents: b.cents ?? [], specs: b.specs ?? [], obs: b.obs, prof: b.prof,
+}));
+---
+<Base title="개월 수로 찾기">
+  <h2>우리 아이 개월 수로 찾기</h2>
+  <p class="sub">"2세" 코호트는 24~35개월을 모두 포함합니다. 개월 수를 넣으면 인접한 두 나이의 데이터를 비율대로 섞어 점수(대출수 × 이 나이 위치)를 다시 매깁니다.</p>
+  <div class="tabs" style="align-items:center;gap:12px">
+    <label>개월 수 <input id="months" type="number" min="0" max="167" value="24" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:6px" /></label>
+    <span id="weights" class="sub" style="margin:0"></span>
+    <label><input id="picOnly" type="checkbox" /> 그림책만</label>
+  </div>
+  <div id="out" class="grid"></div>
+  <script is:inline define:vars={{ pool, profAges, centMin, minLoans, base }}>
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const lib = window.AgeShelfLib?.get() || null; let libSet = null;
+    if (lib) {
+      const note = document.createElement('div'); note.className = 'notice';
+      note.innerHTML = `<b>${lib.name}</b> 소장 도서만 표시 중. <button class="chip" id="libOff" type="button">해제</button>`;
+      document.querySelector('main h2').after(note);
+      document.getElementById('libOff').addEventListener('click', () => { window.AgeShelfLib.set(null); location.reload(); });
+      window.AgeShelfLib.isbns(base, lib.code).then((s) => { libSet = s; render(); });
+    }
+    function render() {
+      const m = Math.max(0, Number($('#months').value) || 0);
+      const t = m / 12;                       // 만 나이(연속)
+      const c = t - 0.5;                      // 코호트 중심 기준 좌표
+      const minA = profAges[0], maxA = profAges[profAges.length - 1];
+      let a1 = Math.floor(c), a2 = a1 + 1, w2 = c - a1;
+      if (a1 < minA) { a1 = minA; a2 = minA; w2 = 0; }   // 0세 코호트는 제외 → 최소 연령으로 고정
+      if (a2 > maxA) { a2 = maxA; }
+      const w1 = 1 - w2;
+      const i1 = profAges.indexOf(a1), i2 = profAges.indexOf(a2);
+      $('#weights').textContent = w2 > 0 && a1 !== a2 ? `${a1}세 ${(w1*100).toFixed(0)}% + ${a2}세 ${(w2*100).toFixed(0)}%` : `${a1}세 100%`;
+      const picOnly = $('#picOnly').checked;
+      const scored = pool
+        .filter((b) => (b.obs[i1] || b.obs[i2]) && (!picOnly || b.picture) && (!lib || (libSet && libSet.has(b.isbn13))))
+        .map((b) => {
+          const loans = w1 * b.loans[i1] + w2 * b.loans[i2];
+          const cent = w1 * (b.cents[i1] ?? 0) + w2 * (b.cents[i2] ?? 0);
+          const spec = w1 * (b.specs[i1] ?? 0) + w2 * (b.specs[i2] ?? 0);
+          return { b, s: loans * cent, l: Math.round(loans), cent, spec };
+        })
+        .filter((x) => x.cent >= centMin && x.l >= minLoans)
+        .sort((x, y) => y.s - x.s).slice(0, 60);
+      $('#out').innerHTML = scored.map(({ b, l, cent, spec }, i) => {
+        const max = Math.max(...b.prof);
+        const bars = profAges.map((a, k) => `<i class="${(a === a1 || a === a2) ? 'on ' : ''}${b.obs[k] ? '' : 'miss'}" style="height:${Math.max(6, Math.round(100 * b.prof[k] / max))}%" title="${a}세 ${(100*b.prof[k]).toFixed(0)}%"></i>`).join('');
+        const axis = profAges.map((a) => `<span>${a}</span>`).join('');
+        return `<a class="card" href="${base}/book/${b.isbn13}">
+          <div>${b.cover ? `<img class="cover" src="${b.cover}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
+          <div><div class="rank">#${i + 1} · 보간 대출 ${l.toLocaleString()}건 · 이 나이 위치 ${Math.floor(cent * 100)}%</div>
+          <div class="title">${esc(b.title)}</div><div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)}</div>
+          <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.median).toFixed(1)}세</span>${spec >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.shape && b.shape !== '대칭' ? `<span class="badge">${esc(b.shape)}</span>` : ''}${b.picture ? '<span class="badge pic">그림책</span>' : ''}</div>
+          <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;
+      }).join('');
+    }
+    $('#months').addEventListener('input', render);
+    $('#picOnly').addEventListener('change', render);
+    render();
+  </script>
+</Base>

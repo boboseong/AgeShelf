@@ -1,0 +1,86 @@
+---
+import meta from '../data/meta.json';
+import { SITE_BASE } from '../config';
+const base = SITE_BASE;
+const { title = 'AgeShelf' } = Astro.props;
+const ages: number[] = meta.ages;
+const current = Astro.url.pathname;
+---
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} · AgeShelf</title>
+  <style is:global>
+    :root { --bg:#fbfaf7; --fg:#22211f; --muted:#6f6b63; --line:#e6e2da; --accent:#d9722b; --accent2:#3f7d6a; --card:#fff; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family: "Pretendard", -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; line-height:1.5; }
+    a { color:inherit; text-decoration:none; }
+    header { border-bottom:1px solid var(--line); background:#fff; position:sticky; top:0; z-index:2; }
+    .wrap { max-width:1040px; margin:0 auto; padding:0 16px; }
+    .brand { display:flex; align-items:baseline; gap:10px; padding:14px 0 8px; }
+    .brand h1 { margin:0; font-size:20px; letter-spacing:-0.01em; }
+    .brand small { color:var(--muted); }
+    nav.ages { display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; }
+    nav.ages a { padding:6px 12px; border:1px solid var(--line); border-radius:999px; background:#fff; white-space:nowrap; font-size:14px; }
+    nav.ages a.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+    main { padding:20px 0 60px; }
+    h2 { font-size:22px; margin:0 0 4px; letter-spacing:-0.01em; }
+    .sub { color:var(--muted); font-size:14px; margin-bottom:16px; }
+    .tabs { display:flex; gap:8px; margin:14px 0; }
+    .tabs button { padding:8px 14px; border:1px solid var(--line); background:#fff; border-radius:8px; cursor:pointer; font-size:14px; }
+    .tabs button.on { background:var(--fg); color:#fff; border-color:var(--fg); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:12px; }
+    .card { display:grid; grid-template-columns:64px 1fr; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .card .rank { font-size:12px; color:var(--muted); }
+    .card .title { font-weight:600; font-size:15px; line-height:1.3; margin:2px 0; }
+    .card .meta { font-size:12px; color:var(--muted); }
+    .cover { width:64px; height:88px; background:#eee8dc; border-radius:6px; object-fit:cover; display:block; }
+    .badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .badge { font-size:11px; padding:2px 7px; border-radius:999px; background:#f1eee7; color:#4d493f; }
+    .badge.band { background:#e6f1ec; color:var(--accent2); font-weight:600; }
+    .badge.pic { background:#fdeadb; color:#9a4a12; }
+    .bars { display:flex; align-items:flex-end; gap:2px; height:28px; margin-top:8px; }
+    .bars i { flex:1; background:#d8d3c8; border-radius:2px 2px 0 0; min-height:2px; }
+    .bars i.on { background:var(--accent); }
+    .bars i.miss { opacity:.35; }
+    .axis { display:flex; gap:2px; font-size:9px; color:var(--muted); }
+    .axis span { flex:1; text-align:center; }
+    footer { border-top:1px solid var(--line); color:var(--muted); font-size:12px; padding:20px 0; }
+    .notice { background:#fff7ea; border:1px solid #f3dcb8; border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:16px; }
+    .badge.tag { background:#eef2f7; color:#3b4a5c; cursor:pointer; }
+    .badge.tag.flag { background:#fdf0f0; color:#8a2b2b; }
+    details.filters { border:1px solid var(--line); border-radius:12px; background:#fff; padding:6px 14px; margin:0 0 12px; }
+    details.filters summary { cursor:pointer; font-weight:600; font-size:14px; padding:6px 0; }
+    .fgroup { display:flex; gap:10px; padding:8px 0; border-top:1px dashed var(--line); align-items:flex-start; }
+    .flabel { flex:0 0 52px; font-size:12px; color:var(--muted); padding-top:6px; }
+    .fchips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+    .fsub { display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; margin-right:10px; }
+    .fsub b { font-size:11px; color:var(--muted); font-weight:600; }
+    .chip { padding:4px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; font-size:12px; cursor:pointer; }
+    .chip small { color:var(--muted); font-size:10px; }
+    .chip.on { background:var(--fg); color:#fff; border-color:var(--fg); }
+    .chip.on small { color:#ddd; }
+    #pubSelect { padding:5px 8px; border:1px solid var(--line); border-radius:8px; font-size:12px; max-width:260px; }
+  </style>
+  <script is:inline define:vars={{ dataVersion: (meta as any).build ?? meta.generated }}>window.__dataVersion = dataVersion;</script>
+  <script src={`${base}/js/card.js`} is:inline></script>
+</head>
+<body>
+  <header><div class="wrap">
+    <div class="brand" style="justify-content:space-between;flex-wrap:wrap">
+      <span style="display:flex;align-items:baseline;gap:10px"><a href={`${base}/`}><h1>AgeShelf</h1></a><small>한 살 단위로 보는 우리 아이 도서관 인기 책</small></span>
+      <form action={`${base}/search`} method="get" style="margin:0"><input name="q" type="search" placeholder="책 제목·저자 검색" style="padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:13px;width:200px" /></form>
+    </div>
+    <nav class="ages">
+      {ages.map((a) => <a href={`${base}/age/${a}`} class={current.includes(`/age/${a}`) ? 'on' : ''}>{(meta as any).labels?.[String(a)] ?? `${a}세`}</a>)}
+      <a href={`${base}/months`} class={current.includes('/months') ? 'on' : ''}>개월 수로 찾기</a>
+    </nav>
+  </div></header>
+  <main class="wrap">
+    {meta.sample && <div class="notice">⚠️ 현재 표시 중인 데이터는 <b>합성 샘플</b>입니다. 정보나루 API 키 활성화 후 실제 데이터로 교체됩니다.</div>}
+    <slot />
+  </main>
+  <footer><div class="wrap">출처: {meta.source} · 생성일 {meta.generated} · 연령은 대출자(도서관 회원) 기준이며 가족 카드 혼용 등의 한계가 있습니다.</div></footer>
+</body>
+</html>

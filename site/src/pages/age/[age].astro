@@ -1,0 +1,189 @@
+---
+import Base from '../../layouts/Base.astro';
+import BookCard from '../../components/BookCard.astro';
+import meta from '../../data/meta.json';
+import { SITE_BASE } from '../../config';
+export async function getStaticPaths() {
+  return (meta.ages as number[]).map((age) => ({ params: { age: String(age) } }));
+}
+const age = Number(Astro.params.age);
+const data = (await import(`../../data/ages/${age}.json`)).default;
+const label = (meta as any).labels?.[String(age)] ?? `${age}세`;
+const centMinPct = Math.round(((meta as any).cent_min ?? 0.3) * 100);
+const minLoans = (meta as any).min_loans ?? 30;
+const facets = data.facets ?? { kdc2: [], form: [], pub: [], flag: [] };
+const kdc2Names: Record<string, string> = (meta as any).kdc2_names ?? {};
+const flagTags: string[] = (meta as any).flag_tags ?? [];
+const profAges: number[] = meta.profile_ages;
+const base = SITE_BASE;
+const holdings = (meta as any).holdings ?? { regions: [], n_books: 0, n_libs: 0 };
+const regionNames: Record<string, string> = (meta as any).region_names ?? {};
+const holdRegions: string[] = holdings.regions ?? [];
+// 세부 라벨을 대분류별로 묶기
+const groups: Record<string, any[]> = {};
+for (const row of facets.kdc2 as any[]) { const g = row[2] || '기타'; (groups[g] ??= []).push(row); }
+const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: number, r: any) => s + r[3], 0)) - (groups[x].reduce((s: number, r: any) => s + r[3], 0)));
+---
+<Base title={`${label} 인기 도서`}>
+  <h2>{label}</h2>
+  {age === 1 && <div class="notice">0세 카드 대출은 생년이 없는 학급·기관 단체대출이 대부분이라 순위에서 제외했습니다. 이 페이지는 1세(12~23개월) 카드 대출을 기준으로 하며, 상위권은 대부분 0세부터 보는 아기 그림책입니다.</div>}
+  <p class="sub">
+    <b>딱 맞는 책</b>은 {label}가 이 책 독자 분포의 중심 가까이에 있는 책(위치 {centMinPct}% 이상, 대출 {minLoans}건 이상)만 골라 <b>{label} 대출수 × 위치</b> 순으로 정렬한 목록입니다.
+    이미 지난 어린 책은 강하게, 앞으로 볼 큰 책은 완만하게 내려갑니다.
+    <b>많이 빌린 책</b>은 {label} 대출 건수순입니다. 후보 {Number(data.n_eligible ?? 0).toLocaleString()}권.
+  </p>
+
+  <details class="filters" id="filters">
+    <summary>필터 <span id="filterSummary" class="sub" style="margin:0"></span></summary>
+    {holdRegions.length > 0 && <div class="fgroup"><div class="flabel">도서관</div>
+      <div class="fchips">
+        <select id="libRegion"><option value="">지역 선택</option>{holdRegions.map((r) => <option value={r}>{regionNames[r] ?? r}</option>)}</select>
+        <select id="libSelect" disabled><option value="">도서관 선택</option></select>
+        <button class="chip" id="libNear" type="button">내 주변</button>
+        <button class="chip" id="libClear" type="button" hidden>도서관 해제</button>
+        <span class="sub" style="margin:0;font-size:11px">소장 정보는 {regionNames[holdRegions[0]] ?? ''}{holdRegions.slice(1).map((r) => '·' + (regionNames[r] ?? r)).join('')} 도서관 {Number(holdings.n_libs).toLocaleString()}곳, 핵심 도서 {Number(holdings.n_books).toLocaleString()}권 기준</span>
+      </div>
+    </div>}
+    <div class="fgroup"><div class="flabel">분야</div>
+      <div class="fchips">{groupOrder.map((g) => <span class="fsub"><b>{g}</b>{groups[g].map((r: any) => <button class="chip" data-f="kdc2" data-v={r[0]} title={`${r[3]}권`}>{r[1]} <small>{r[3]}</small></button>)}</span>)}</div>
+    </div>
+    <div class="fgroup"><div class="flabel">형태</div>
+      <div class="fchips">{(facets.form as any[]).map((r) => <button class="chip" data-f="form" data-v={r[0]}>{r[0]} <small>{r[1]}</small></button>)}</div>
+    </div>
+    <div class="fgroup"><div class="flabel">성격</div>
+      <div class="fchips">{(facets.flag as any[]).map((r) => <button class="chip" data-f="flag" data-v={String(r[0])}>{r[1]} <small>{r[2]}</small></button>)}</div>
+    </div>
+    <div class="fgroup"><div class="flabel">출판사</div>
+      <div class="fchips">
+        <select id="pubSelect"><option value="">전체</option>{(facets.pub as any[]).map((r) => <option value={r[0]}>{r[0]} ({r[1]})</option>)}</select>
+        <button class="chip" id="clearFilters">필터 지우기</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="tabs">
+    <button class="on" data-tab="fit">{label}에 딱 맞는 책</button>
+    <button data-tab="popular">{label}가 많이 빌린 책</button>
+  </div>
+  <section id="fit" class="grid">{data.fit.map((b: any, i: number) => <BookCard b={b} rank={i + 1} age={age} mode="fit" />)}</section>
+  <section id="popular" hidden>
+    <p class="sub" style="margin:0 0 10px">
+      이 나이 위치가 20% 미만인 책은 다른 나이가 주로 보는 책이 {label} 카드로 대출된 것(가족 카드 혼용, 생년 오류 등)으로 보고 기본 숨김.
+      <label style="margin-left:8px"><input type="checkbox" id="showNoisy" /> 타연령 책도 보기</label>
+    </p>
+    <div class="grid">{data.popular.map((b: any, i: number) => <div class={b.cent < 0.2 ? 'noisy' : ''} hidden={b.cent < 0.2}><BookCard b={b} rank={i + 1} age={age} mode="popular" /></div>)}</div>
+  </section>
+  <section id="filtered" hidden>
+    <p class="sub" id="filteredInfo" style="margin:0 0 10px"></p>
+    <div class="grid" id="filteredGrid"></div>
+  </section>
+
+  <script is:inline define:vars={{ age, label, profAges, base, kdc2Names, flagTags, regionNames }}>
+    const $ = (s) => document.querySelector(s);
+    const state = { kdc2: new Set(), form: new Set(), flag: new Set(), pub: '', lib: null };
+    let tab = 'fit', pool = null, loading = null, libSet = null, libSetCode = null;
+    const params = new URLSearchParams(location.search);
+    for (const f of ['kdc2', 'form', 'flag']) (params.get(f) || '').split(',').filter(Boolean).forEach((v) => state[f].add(v));
+    state.pub = params.get('pub') || '';
+    if (params.get('tab') === 'popular') tab = 'popular';
+    state.lib = window.AgeShelfLib?.get() || null;
+
+    function active() { return state.kdc2.size || state.form.size || state.flag.size || state.pub || state.lib; }
+    function syncChips() {
+      document.querySelectorAll('.chip[data-f]').forEach((c) => c.classList.toggle('on', state[c.dataset.f].has(c.dataset.v)));
+      const sel = $('#pubSelect'); if (sel) sel.value = state.pub;
+      const parts = [];
+      if (state.lib) parts.push(`${state.lib.name} 소장`);
+      state.kdc2.forEach((v) => parts.push(kdc2Names[v] || v)); state.form.forEach((v) => parts.push(v));
+      state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); if (state.pub) parts.push(state.pub);
+      $('#filterSummary').textContent = parts.length ? '· ' + parts.join(', ') : '';
+      const clr = $('#libClear'); if (clr) clr.hidden = !state.lib;
+      const p = new URLSearchParams();
+      for (const f of ['kdc2', 'form', 'flag']) if (state[f].size) p.set(f, [...state[f]].join(','));
+      if (state.pub) p.set('pub', state.pub); if (tab === 'popular') p.set('tab', 'popular');
+      history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
+    }
+    function showTab() {
+      document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === tab));
+      const filtered = !!active();
+      $('#fit').hidden = filtered || tab !== 'fit';
+      $('#popular').hidden = filtered || tab !== 'popular';
+      $('#filtered').hidden = !filtered;
+    }
+    async function loadPool() {
+      if (pool) return pool;
+      loading ??= fetch(`${base}/data/pool/${age}.json?v=${window.__dataVersion || ''}`).then((r) => r.json()).then((p) => (pool = p));
+      return loading;
+    }
+    async function loadLibSet() {
+      if (!state.lib) { libSet = null; libSetCode = null; return null; }
+      if (libSetCode === state.lib.code) return libSet;
+      libSet = await window.AgeShelfLib.isbns(base, state.lib.code); libSetCode = state.lib.code; return libSet;
+    }
+    async function renderFiltered() {
+      syncChips(); showTab();
+      if (!active()) return;
+      $('#filteredInfo').textContent = '불러오는 중…';
+      let p, ls;
+      try { [p, ls] = await Promise.all([loadPool(), loadLibSet()]); }
+      catch (e) { $('#filteredInfo').textContent = '목록 데이터를 불러오지 못했습니다. 새로고침(Ctrl+F5) 해 주세요.'; console.error(e); return; }
+      let rows = p.books.filter((b) =>
+        (!ls || ls.has(b.i)) &&
+        (!state.kdc2.size || state.kdc2.has(b.k2)) && (!state.form.size || state.form.has(b.fm)) &&
+        (!state.flag.size || [...state.flag].every((f) => (b.fl || []).includes(Number(f)))) && (!state.pub || b.pn === state.pub));
+      if (tab === 'popular') rows = rows.filter((b) => b.pr > 0).sort((x, y) => x.pr - y.pr); else rows.sort((x, y) => y.fit - x.fit);
+      const shown = window.AgeShelfDiversify(rows, 3, 120);
+      const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만(소장 정보가 있는 핵심 도서 기준)` : '';
+      $('#filteredInfo').textContent = `${rows.length.toLocaleString()}권 중 ${shown.length}권 표시 · ${tab === 'popular' ? label + ' 대출 건수순' : '추천도(대출 × 위치)순'} · 시리즈당 최대 3권${libNote}`;
+      $('#filteredGrid').innerHTML = shown.map((b, i) => window.AgeShelfCard(b, { rank: i + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags })).join('');
+    }
+    // 도서관 피커
+    async function fillLibs(region, preselect) {
+      const sel = $('#libSelect'); if (!sel) return;
+      sel.disabled = true; sel.innerHTML = '<option value="">불러오는 중…</option>';
+      let dir;
+      try { dir = await window.AgeShelfLib.directory(base); }
+      catch (e) { sel.innerHTML = '<option value="">도서관 목록을 불러오지 못했습니다 (새로고침)</option>'; console.error(e); return; }
+      const libs = dir.libs.filter((l) => l.region === region && l.n > 0).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      sel.innerHTML = '<option value="">도서관 선택</option>' + libs.map((l) => `<option value="${l.code}">${l.name} (${l.n})</option>`).join('');
+      sel.disabled = false; if (preselect) sel.value = preselect;
+    }
+    function selectLib(code, name, region) {
+      state.lib = code ? { code, name, region } : null; window.AgeShelfLib.set(state.lib); renderFiltered();
+    }
+    $('#libRegion')?.addEventListener('change', (e) => { fillLibs(e.target.value); });
+    $('#libSelect')?.addEventListener('change', (e) => {
+      const o = e.target.selectedOptions[0]; selectLib(e.target.value, o ? o.textContent.replace(/ \(\d+\)$/, '') : '', $('#libRegion').value);
+    });
+    $('#libClear')?.addEventListener('click', () => { selectLib(null); const s = $('#libSelect'); if (s) s.value = ''; });
+    $('#libNear')?.addEventListener('click', () => {
+      if (!navigator.geolocation) { alert('이 브라우저는 위치를 지원하지 않습니다.'); return; }
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const dir = await window.AgeShelfLib.directory(base);
+        const { latitude: la, longitude: lo } = pos.coords;
+        const near = dir.libs.filter((l) => l.n > 0 && l.lat && l.lon).map((l) => ({ ...l, d: window.AgeShelfLib.dist(la, lo, l.lat, l.lon) })).sort((a, b) => a.d - b.d).slice(0, 15);
+        if (!near.length) { alert('소장 정보가 있는 도서관이 없습니다.'); return; }
+        const sel = $('#libSelect');
+        sel.innerHTML = '<option value="">가까운 도서관 선택</option>' + near.map((l) => `<option value="${l.code}" data-region="${l.region}">${l.name} · ${l.d.toFixed(1)}km (${l.n})</option>`).join('');
+        sel.disabled = false; $('#libRegion').value = near[0].region;
+        sel.value = near[0].code; selectLib(near[0].code, near[0].name, near[0].region);
+      }, () => alert('위치를 가져오지 못했습니다.'));
+    });
+    if (state.lib) { const r = $('#libRegion'); if (r) { r.value = state.lib.region || ''; fillLibs(state.lib.region, state.lib.code); } }
+
+    document.querySelectorAll('.chip[data-f]').forEach((c) => c.addEventListener('click', () => {
+      const s = state[c.dataset.f]; s.has(c.dataset.v) ? s.delete(c.dataset.v) : s.add(c.dataset.v); renderFiltered();
+    }));
+    $('#pubSelect')?.addEventListener('change', (e) => { state.pub = e.target.value; renderFiltered(); });
+    $('#clearFilters')?.addEventListener('click', () => { state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.pub = ''; renderFiltered(); });
+    document.querySelectorAll('.tabs button').forEach((btn) => btn.addEventListener('click', () => { tab = btn.dataset.tab; renderFiltered(); }));
+    document.addEventListener('click', (e) => {
+      const t = e.target.closest('.badge.tag'); if (!t) return;
+      e.preventDefault(); const s = state[t.dataset.f]; if (s && !s.has(t.dataset.v)) { s.add(t.dataset.v); renderFiltered(); }
+    });
+    const cb = $('#showNoisy');
+    cb?.addEventListener('change', () => { document.querySelectorAll('.noisy').forEach((el) => { el.hidden = !cb.checked; }); });
+    if (active()) { $('#filters').open = true; }
+    renderFiltered();
+  </script>
+</Base>

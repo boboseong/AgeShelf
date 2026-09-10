@@ -1,0 +1,31 @@
+---
+import meta from '../data/meta.json';
+import { SITE_BASE } from '../config';
+const base = SITE_BASE;
+const { b, rank, age, mode } = Astro.props;
+const profAges: number[] = meta.profile_ages;
+const labels: Record<string, string> = (meta as any).labels ?? {};
+const max = Math.max(...b.prof);
+const centPct = Math.floor((b.cent ?? 0) * 100);
+const centLabel = centPct >= 80 ? '중심' : centPct >= 50 ? '중심 근처' : centPct >= 30 ? '가장자리' : '다른 나이 책';
+---
+<a class="card" href={`${base}/book/${b.isbn13}`}>
+  <div>{b.cover ? <img class="cover" src={b.cover} alt="" loading="lazy" /> : <div class="cover"></div>}</div>
+  <div>
+    <div class="rank">#{rank} · {labels[String(age)] ?? `${age}세`} 대출 {b.loan_count.toLocaleString()}건 · 이 나이 위치 {centPct}% ({centLabel})</div>
+    <div class="title">{b.title}</div>
+    <div class="meta">{b.authors} · {b.publisher} · {b.year}</div>
+    <div class="badges">
+      <span class="badge band">추천 {b.band}</span>
+      <span class="badge">중앙 {Number(b.median ?? b.peak).toFixed(1)}세</span>
+      {b.spec >= 2 && <span class="badge">이 나이에 집중</span>}
+      {b.shape && b.shape !== '대칭' && <span class="badge">{b.shape}</span>}
+      {b.picture && <span class="badge pic">그림책</span>}
+      {b.kdc2n && <span class="badge tag" data-f="kdc2" data-v={b.kdc2}>{b.kdc2n}</span>}
+      {b.form && <span class="badge tag" data-f="form" data-v={b.form}>{b.form}</span>}
+      {(b.flags ?? []).slice(0, 2).map((t: string) => <span class="badge tag flag" data-f="flag" data-v={String(((meta as any).flag_tags ?? []).indexOf(t))}>{t}</span>)}
+    </div>
+    <div class="bars">{profAges.map((a, i) => <i class={(a === age ? 'on ' : '') + (b.obs[i] ? '' : 'miss')} style={`height:${Math.max(6, Math.round(100 * b.prof[i] / max))}%`} title={`${a}세 ${(100 * b.prof[i]).toFixed(0)}%`}></i>)}</div>
+    <div class="axis">{profAges.map((a) => <span>{a}</span>)}</div>
+  </div>
+</a>

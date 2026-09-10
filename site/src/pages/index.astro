@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import meta from '../data/meta.json';
+import { SITE_BASE } from '../config';
+const base = SITE_BASE;
+const ages: number[] = meta.ages;
+const previews = await Promise.all(ages.map(async (a) => (await import(`../data/ages/${a}.json`)).default));
+---
+<Base title="연령별 인기 도서">
+  <h2>우리 아이 나이에 딱 맞는 책 찾기</h2>
+  <p class="sub">공공도서관 대출 데이터를 <b>한 살 단위</b>로 나누고, 각 나이의 독자가 <b>상대적으로 더 많이 고른</b> 책을 찾습니다. 도서 {meta.n_books_site.toLocaleString()}권 분석.</p>
+  <div class="grid">
+    {previews.map((p) => (
+      <a class="card" href={`${base}/age/${p.age}`} style="grid-template-columns:1fr">
+        <div>
+          <div class="title">{(meta as any).labels?.[String(p.age)] ?? `${p.age}세`}에 딱 맞는 책</div>
+          <ol class="meta" style="padding-left:18px;margin:6px 0 0">
+            {p.fit.slice(0, 5).map((b: any) => <li>{b.title} <span style="color:#aaa">· {b.band}</span></li>)}
+          </ol>
+        </div>
+      </a>
+    ))}
+  </div>
+</Base>

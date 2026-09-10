@@ -1,0 +1,101 @@
+---
+import Base from '../layouts/Base.astro';
+import meta from '../data/meta.json';
+import { SITE_BASE } from '../config';
+// 정적 상세 페이지가 없는 책용 상세 화면: /b/?isbn=9788912345678 → public/data/books/NNN.json 조각을 읽어 그린다.
+const profAges: number[] = meta.profile_ages;
+const labels: Record<string, string> = (meta as any).labels ?? {};
+const base = SITE_BASE;
+const centMin: number = (meta as any).cent_min ?? 0.3;
+const minLoans: number = (meta as any).min_loans ?? 30;
+const gamma: number = (meta as any).gamma ?? 1;
+const flagTags: string[] = (meta as any).flag_tags ?? [];
+const showAges: number[] = meta.ages;
+const regionNames: Record<string, string> = (meta as any).region_names ?? {};
+---
+<Base title="책 상세">
+  <div id="root"><p class="sub">불러오는 중…</p></div>
+  <script is:inline define:vars={{ profAges, labels, base, centMin, minLoans, gamma, flagTags, showAges, regionNames }}>
+    const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const root = document.getElementById('root');
+    const isbn = new URLSearchParams(location.search).get('isbn') || '';
+    const th = 'text-align:left;padding:2px 8px 2px 0;white-space:nowrap';
+    const td = 'padding:2px 6px;text-align:right;color:#666';
+    function tagChips(b) {
+      const ages = showAges; const tagAge = Math.min(Math.max(Math.round(Number(b.median ?? b.peak)), ages[0]), ages[ages.length - 1]);
+      const out = [];
+      if (b.kdc2n) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?kdc2=${esc(b.kdc2)}">${esc(b.kdc1n)} › ${esc(b.kdc2n)}</a>`);
+      if (b.form) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?form=${encodeURIComponent(b.form)}">${esc(b.form)}</a>`);
+      if (b.pubn) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?pub=${encodeURIComponent(b.pubn)}">${esc(b.pubn)}</a>`);
+      (b.flags || []).forEach((t) => out.push(`<a class="badge tag flag" href="${base}/age/${tagAge}?flag=${flagTags.indexOf(t)}">${esc(t)}</a>`));
+      return out.join('');
+    }
+    function render(b) {
+      document.title = `${b.title} · AgeShelf`;
+      const max = Math.max(...b.prof, 1e-9);
+      const cents = b.cents || [], specs = b.specs || [], fits = b.fits || [];
+      const bestIdx = cents.length ? cents.indexOf(Math.max(...cents)) : -1;
+      const elig = (i) => (cents[i] ?? 0) >= centMin && b.loans[i] >= minLoans;
+      const bars = profAges.map((a, i) => `<i class="${i === bestIdx ? 'on ' : ''}${b.obs[i] ? '' : 'miss'}" style="height:${Math.max(4, Math.round(100 * b.prof[i] / max))}%" title="${a}세 ${(100 * b.prof[i]).toFixed(1)}% · ${b.loans[i].toLocaleString()}건 · 위치 ${Math.floor((cents[i] ?? 0) * 100)}%"></i>`).join('');
+      const axis = profAges.map((a) => `<span>${a}세</span>`).join('');
+      const row = (name, cells) => `<tr><th style="${th}">${name}</th>${cells.join('')}</tr>`;
+      const table = [
+        row('나이', profAges.map((a) => `<td style="${td}">${a}</td>`)),
+        row('대출', b.loans.map((v, i) => `<td style="${td}">${b.obs[i] ? v.toLocaleString() : '0'}</td>`)),
+        row('이 나이 위치', cents.map((v) => `<td style="${td}${v >= centMin ? ';font-weight:600;color:var(--accent2)' : ''}">${Math.floor(v * 100)}%</td>`)),
+        row('<b>추천도</b>', fits.map((v, i) => `<td style="${td}${elig(i) ? ';font-weight:700;color:var(--accent)' : ''}">${elig(i) ? v.toLocaleString() : '–'}</td>`)),
+        row('집중도', specs.map((v) => `<td style="${td}">${v.toFixed(1)}</td>`)),
+        row('lift(참고)', (b.lifts || []).map((v) => `<td style="${td}">${v.toFixed(2)}</td>`)),
+      ].join('');
+      root.innerHTML = `
+      <div class="card" style="grid-template-columns:120px 1fr;max-width:760px">
+        <div>${b.cover ? `<img class="cover" style="width:120px;height:165px" src="${esc(b.cover)}" alt="">` : '<div class="cover" style="width:120px;height:165px"></div>'}</div>
+        <div>
+          <h2>${esc(b.title)}</h2>
+          <div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)} · ISBN ${esc(b.isbn13)}</div>
+          <div class="badges">
+            <span class="badge band">추천 연령 ${esc(b.band)}</span>
+            <span class="badge">중앙 ${Number(b.median ?? b.peak).toFixed(1)}세</span>
+            <span class="badge">가장 많이 고른 나이 ${labels[String(b.peak)] ?? b.peak + '세'}</span>
+            <span class="badge">분포 폭 ${Number(b.spread).toFixed(1)}세</span>
+            <span class="badge">${esc(b.shape)}${b.skew ? ` (왜도 ${Number(b.skew).toFixed(2)})` : ''}</span>
+            ${b.picture ? '<span class="badge pic">그림책</span>' : ''}
+          </div>
+          <div class="badges" style="margin-top:6px">${tagChips(b)}</div>
+          <h3 style="font-size:14px;margin:16px 0 4px">나이별 선택 비중 (코호트 크기 보정 γ=${gamma}, 스무딩)</h3>
+          <div class="bars" style="height:80px">${bars}</div><div class="axis">${axis}</div>
+          <div style="overflow-x:auto"><table style="font-size:12px;margin-top:12px;border-collapse:collapse">${table}</table></div>
+          <p class="sub" style="font-size:12px;margin-top:8px"><b>추천도</b> = 그 나이 대출수 × 이 나이 위치. 위치 ${Math.round(centMin * 100)}% 미만이거나 대출 ${minLoans}건 미만인 나이는 후보에서 빠집니다(–). <b>이 나이 위치</b>는 독자 분포에서 그 나이가 중앙에 얼마나 가까운지, <b>집중도</b>는 13개 나이에 고르게 퍼졌을 때 1입니다.</p>
+          ${b.detail ? `<p style="font-size:13px"><a href="${esc(b.detail)}" target="_blank" rel="noopener" style="color:var(--accent2)">정보나루 도서 상세 →</a></p>` : ''}
+        </div>
+      </div>
+      <section id="holdings" class="card" style="grid-template-columns:1fr;max-width:760px;margin-top:12px" hidden>
+        <div><h3 style="font-size:15px;margin:0 0 6px">소장 도서관 <span id="holdCount" class="sub" style="margin:0"></span></h3>
+        <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 수집 시점의 ISBN 기준입니다. 지금 대출 가능한지는 도서관 홈페이지에서 확인하세요.</p>
+        <div id="holdList" style="font-size:13px"></div></div>
+      </section>`;
+      renderHoldings(b.libs || []);
+    }
+    async function renderHoldings(codes) {
+      if (!codes.length || !window.AgeShelfLib) return;
+      const dir = await window.AgeShelfLib.directory(base); const set = new Set(codes);
+      const libs = dir.libs.filter((l) => set.has(l.code)).sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      const sec = document.getElementById('holdings'); if (!sec) return; sec.hidden = false;
+      document.getElementById('holdCount').textContent = `${libs.length}곳`;
+      const byRegion = {}; libs.forEach((l) => { (byRegion[l.region] ??= []).push(l); });
+      document.getElementById('holdList').innerHTML = Object.entries(byRegion).map(([r, ls]) => `
+        <div style="margin:6px 0"><b>${esc(regionNames[r] || r)}</b> <span class="sub" style="margin:0">${ls.length}곳</span>
+        <div class="badges">${ls.map((l) => `<a class="badge" href="${l.home ? esc(l.home) : '#'}" ${l.home ? 'target="_blank" rel="noopener"' : ''} title="${esc(l.addr)}">${esc(l.name)}</a>`).join('')}</div></div>`).join('');
+    }
+    if (!isbn || isbn.length > 20) {
+      root.innerHTML = '<p class="sub">ISBN 이 없습니다. <a href="' + base + '/search">검색으로 돌아가기</a></p>';
+    } else {
+      const tail = isbn.slice(-3); const shard = /^\d{3}$/.test(tail) ? tail : 'xxx';
+      fetch(`${base}/data/books/${shard}.json?v=${window.__dataVersion || ''}`).then((r) => r.json()).then((shard) => {
+        const b = shard[isbn];
+        if (!b) { root.innerHTML = '<p class="sub">이 책의 데이터가 없습니다.</p>'; return; }
+        render(b);
+      }).catch(() => { root.innerHTML = '<p class="sub">데이터를 불러오지 못했습니다.</p>'; });
+    }
+  </script>
+</Base>
