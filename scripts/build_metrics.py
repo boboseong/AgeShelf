@@ -5,8 +5,9 @@
 v3 점수 설계 (PLAN.md 2-8)
   정규화   W[b,a] = L[b,a] / T[a]^γ  (γ=1: lift 곡선과 같은 모양. 0.75가 통념 권장연령과 근소하게 더 맞지만 정의의 명료성을 택함)
   스무딩   P[b,a] = (W + κ·prior_form) / (ΣW + κ)  — 같은 발행형태(그림책/전집/단행본) 평균 분포 쪽으로 κ=150건만큼
-  중심도   c[b,a] = 1 - 2|F_mid(a) - 0.5|  (F_mid: 나이 a 의 구간 중앙 누적비율). 중앙이면 1, 꼬리면 0.
-           비대칭: 독자 대부분이 더 어린 '지난 책'(F>0.5)은 그대로, 더 큰 '앞으로 볼 책'(F<0.5)은 완만하게(지수 1.5)
+  적합도   c[b,a] = √(분위 × 밀도)   ← v3.2 (2026-09-11)
+           분위 = 1 - 2|F_mid(a) - 0.5| (비대칭: 앞으로 볼 어린 쪽은 지수 1.5 로 완만)
+           밀도 = P[b,a] / max_a P[b,a]  (분포 폭 반영: 넓게 통하는 책은 중앙에서 멀어도 값이 유지됨)
   집중도   s[b,a] = min(3, A·P[b,a])  — 13개 나이에 고르면 1. 점수에는 넣지 않고 배지로만 사용
   자격     c ≥ 0.3 이고 그 나이 대출 ≥ 30건
   점수     fit[b,a] = W_CENT·c[b,a] + W_POP·log(L[b,a])/log(Lmax_a)  (0~100점, Lmax_a = 그 나이 후보 최대 대출)  ← v3.1 2026-09-10
@@ -198,12 +199,16 @@ def build(long: pd.DataFrame, cells: pd.DataFrame | None = None, shrink_m: float
     profile = P
 
     # ---- 중심도(비대칭) / 집중도 / 점수 ----
+    # 적합도 = √(분위 기반 × 밀도 기반)  ← v3.2 (2026-09-11 D안)
+    #   분위: 이 책 독자 분포에서 그 나이가 중앙에 얼마나 가까운가 (비대칭: 아직 안 지나온 어린 쪽은 완만하게)
+    #   밀도: 그 나이 비중이 최고점 대비 얼마나 되는가 (분포의 폭이 반영됨 — 넓게 통하는 책은 하단도 인정)
     Pn = P.to_numpy(float)
     F_mid = np.cumsum(Pn, axis=1) - Pn / 2
-    cent = 1 - 2 * np.abs(F_mid - 0.5)
+    c_q = 1 - 2 * np.abs(F_mid - 0.5)
     early = 1 - np.clip(2 * (0.5 - F_mid), 0, 1) ** EARLY_POWER
-    cent = np.where(F_mid < 0.5, early, cent)
-    cent = pd.DataFrame(np.clip(cent, 0, 1), index=L.index, columns=ages)
+    c_q = np.clip(np.where(F_mid < 0.5, early, c_q), 0, 1)
+    c_d = Pn / np.maximum(Pn.max(axis=1, keepdims=True), 1e-12)
+    cent = pd.DataFrame(np.sqrt(c_q * c_d), index=L.index, columns=ages)
     spec = (A * P).clip(upper=SPEC_CAP)
     # 추천도(0~100): 위치 점수 + 인기 점수(log 대출을 그 나이 후보 최대 대비 정규화)
     elig_all = (cent >= CENT_MIN) & (L >= MIN_LOANS_AT_AGE)
