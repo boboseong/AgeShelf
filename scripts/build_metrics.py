@@ -10,7 +10,8 @@ v3 점수 설계 (PLAN.md 2-8)
            밀도 = P[b,a] / max_a P[b,a]  (분포 폭 반영: 넓게 통하는 책은 중앙에서 멀어도 값이 유지됨)
   집중도   s[b,a] = min(3, A·P[b,a])  — 13개 나이에 고르면 1. 점수에는 넣지 않고 배지로만 사용
   자격     c ≥ 0.3 이고 그 나이 대출 ≥ 30건
-  점수     fit[b,a] = W_CENT·c[b,a] + W_POP·log(L[b,a])/log(Lmax_a)  (0~100점, Lmax_a = 그 나이 후보 최대 대출)  ← v3.1 2026-09-10
+  점수     fit[b,a] = W_CENT·c[b,a] + W_POP·(log L - log Lmin)/(log Lmax_a - log Lmin)   (0~100점)
+           Lmin = 자격 최소 대출(30건) → 0점, Lmax_a = 그 나이 후보 최대 대출 → 만점
   밴드     P 의 25~75% 분위 구간, 중앙 나이 = 50% 분위(보간)
   lift     참고값으로 유지 (비관적: 1~8세는 상한 U, 9세 이상은 관측값)
 
@@ -213,7 +214,10 @@ def build(long: pd.DataFrame, cells: pd.DataFrame | None = None, shrink_m: float
     # 추천도(0~100): 위치 점수 + 인기 점수(log 대출을 그 나이 후보 최대 대비 정규화)
     elig_all = (cent >= CENT_MIN) & (L >= MIN_LOANS_AT_AGE)
     lmax = pd.Series({a: float(L[a][elig_all[a]].max()) if elig_all[a].any() else float(L[a].max()) for a in ages})
-    pop = pd.DataFrame({a: (np.log(L[a].clip(lower=1)) / np.log(max(lmax[a], 2.0))).clip(0, 1) for a in ages})
+    # 자격 최소 대출(=MIN_LOANS_AT_AGE)을 0점, 그 나이 최대 대출을 만점으로 (2026-09-11 사용자 결정: 하한을 0으로 내려 간격 확대)
+    lmin = float(MIN_LOANS_AT_AGE)
+    pop = pd.DataFrame({a: ((np.log(L[a].clip(lower=lmin)) - np.log(lmin))
+                            / max(np.log(max(lmax[a], lmin * 2)) - np.log(lmin), 1e-9)).clip(0, 1) for a in ages})
     popscore = W_POP * pop
     fit = W_CENT * cent + popscore
 
