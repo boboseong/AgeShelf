@@ -23,6 +23,7 @@ const centLabel = centPct >= 80 ? '딱 맞음' : centPct >= 50 ? '잘 맞음' : 
       {b.picture && <span class="badge pic">그림책</span>}
       {b.kdc2n && <span class="badge tag" data-f="kdc2" data-v={b.kdc2}>{b.kdc2n}</span>}
       {b.form && <span class="badge tag" data-f="form" data-v={b.form}>{b.form}</span>}
+      {(b.topics ?? []).slice(0, 2).map((t: string) => <span class="badge tag topic" data-f="topic" data-v={String(((meta as any).topics ?? []).indexOf(t))}>{t}</span>)}
       {(b.flags ?? []).slice(0, 2).map((t: string) => <span class="badge tag flag" data-f="flag" data-v={String(((meta as any).flag_tags ?? []).indexOf(t))}>{t}</span>)}
     </div>
     <div class="bars">{profAges.map((a, i) => <i class={(a === age ? 'on ' : '') + (b.obs[i] ? '' : 'miss')} style={`height:${Math.max(6, Math.round(100 * b.prof[i] / max))}%`} title={`${a}세 ${(100 * b.prof[i]).toFixed(0)}%`}></i>)}</div>

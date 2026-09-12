@@ -11,9 +11,10 @@ const data = (await import(`../../data/ages/${age}.json`)).default;
 const label = (meta as any).labels?.[String(age)] ?? `${age}세`;
 const centMinPct = Math.round(((meta as any).cent_min ?? 0.3) * 100);
 const minLoans = (meta as any).min_loans ?? 30;
-const facets = data.facets ?? { kdc2: [], form: [], pub: [], flag: [] };
+const facets = data.facets ?? { kdc2: [], form: [], pub: [], flag: [], topic: [] };
 const kdc2Names: Record<string, string> = (meta as any).kdc2_names ?? {};
 const flagTags: string[] = (meta as any).flag_tags ?? [];
+const topics: string[] = (meta as any).topics ?? [];
 const profAges: number[] = meta.profile_ages;
 const base = SITE_BASE;
 const holdings = (meta as any).holdings ?? { regions: [], n_books: 0, n_libs: 0 };
@@ -47,6 +48,9 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
         <span class="sub" style="margin:0;font-size:11px">소장 정보: {holdRegions.map((r) => `${regionNames[r] ?? r} ${Number((holdings.by_region ?? {})[r] ?? 0).toLocaleString()}권`).join(' · ')} (도서관 {Number(holdings.n_libs).toLocaleString()}곳)</span>
       </div>
     </div>}
+    {(facets.topic ?? []).length > 0 && <div class="fgroup"><div class="flabel">주제</div>
+      <div class="fchips">{(facets.topic as any[]).map((r) => <button class="chip" data-f="topic" data-v={String(r[0])}>{r[1]} <small>{r[2]}</small></button>)}</div>
+    </div>}
     <div class="fgroup"><div class="flabel">분야</div>
       <div class="fchips">{groupOrder.map((g) => <span class="fsub"><b>{g}</b>{groups[g].map((r: any) => <button class="chip" data-f="kdc2" data-v={r[0]} title={`${r[3]}권`}>{r[1]} <small>{r[3]}</small></button>)}</span>)}</div>
     </div>
@@ -78,20 +82,20 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     <span id="moreInfo" class="sub" style="margin:0"></span>
   </div>
 
-  <script is:inline define:vars={{ age, label, profAges, base, kdc2Names, flagTags, regionNames, nEligible, nIndex, teaserN: (meta as any).teaser_n ?? 60 }}>
+  <script is:inline define:vars={{ age, label, profAges, base, kdc2Names, flagTags, topics, regionNames, nEligible, nIndex, teaserN: (meta as any).teaser_n ?? 60 }}>
     const $ = (s) => document.querySelector(s);
     const PAGE = 100;
-    const state = { kdc2: new Set(), form: new Set(), flag: new Set(), pub: '', lib: null, tab: 'fit', noisy: false };
+    const state = { kdc2: new Set(), form: new Set(), flag: new Set(), topic: new Set(), pub: '', lib: null, tab: 'fit', noisy: false };
     let index = null, loading = null, libSet = null, libSetCode = null;
     let current = [];      // 현재 조건의 전체 결과 (시리즈 캡 적용, 순서대로)
     let shown = 0;
     const params = new URLSearchParams(location.search);
-    for (const f of ['kdc2', 'form', 'flag']) (params.get(f) || '').split(',').filter(Boolean).forEach((v) => state[f].add(v));
+    for (const f of ['kdc2', 'form', 'flag', 'topic']) (params.get(f) || '').split(',').filter(Boolean).forEach((v) => state[f].add(v));
     state.pub = params.get('pub') || '';
     if (params.get('tab') === 'popular') state.tab = 'popular';
     state.lib = window.AgeShelfLib?.get() || null;
 
-    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.pub || state.lib; }
+    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib; }
     function syncUI() {
       document.querySelectorAll('.chip[data-f]').forEach((c) => c.classList.toggle('on', state[c.dataset.f].has(c.dataset.v)));
       const sel = $('#pubSelect'); if (sel) sel.value = state.pub;
@@ -100,11 +104,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const parts = [];
       if (state.lib) parts.push(`${state.lib.name} 소장`);
       state.kdc2.forEach((v) => parts.push(kdc2Names[v] || v)); state.form.forEach((v) => parts.push(v));
-      state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); if (state.pub) parts.push(state.pub);
+      state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); state.topic.forEach((v) => parts.push(topics[Number(v)] || v)); if (state.pub) parts.push(state.pub);
       $('#filterSummary').textContent = parts.length ? '· ' + parts.join(', ') : '';
       const clr = $('#libClear'); if (clr) clr.hidden = !state.lib;
       const p = new URLSearchParams();
-      for (const f of ['kdc2', 'form', 'flag']) if (state[f].size) p.set(f, [...state[f]].join(','));
+      for (const f of ['kdc2', 'form', 'flag', 'topic']) if (state[f].size) p.set(f, [...state[f]].join(','));
       if (state.pub) p.set('pub', state.pub); if (state.tab === 'popular') p.set('tab', 'popular');
       history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
     }
@@ -125,14 +129,15 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       let rows = index.cards.filter((b) =>
         (!ls || ls.has(b.i)) &&
         (!state.kdc2.size || state.kdc2.has(b.k2)) && (!state.form.size || state.form.has(b.fm)) &&
-        (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub));
+        (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)) &&
+        (!state.topic.size || [...state.topic].every((f) => ((b.tpb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub));
       if (state.tab === 'popular') rows = rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
       else rows = rows.filter((b) => b.elig).sort((x, y) => y.fit - x.fit);
       return rows;
     }
     function renderMore() {
       const chunk = current.slice(shown, shown + PAGE);
-      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags })).join(''));
+      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags, topics })).join(''));
       shown += chunk.length;
       const left = current.length - shown;
       $('#moreBtn').hidden = left <= 0;
@@ -196,7 +201,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     }));
     $('#pubSelect')?.addEventListener('change', (e) => { state.pub = e.target.value; render(); });
     $('#clearFilters')?.addEventListener('click', () => {
-      state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.pub = '';
+      state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.topic.clear(); state.pub = '';
       state.lib = null; window.AgeShelfLib?.set(null); const ls = $('#libSelect'); if (ls) ls.value = '';
       render();
     });

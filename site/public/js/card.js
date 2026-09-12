@@ -14,10 +14,10 @@
     const pub = idx.pubs[r[3]] || ['', ''];
     const cv = r[5] && r[5][1] ? ((r[5][0] >= 0 ? idx.cover_prefix[r[5][0]] : '') + r[5][1]) : '';
     return { i: r[0], t: r[1], au: r[2], pn: pub[0], pu: pub[1], yr: r[4], cv, band: r[6], med: r[7], sh: SHAPES[r[8]] || '',
-      pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17], prof: r[18], elig: r[19] };
+      pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17], prof: r[18], elig: r[19], tpb: r[20] || 0 };
   };
   window.AgeShelfCard = function (b, opts) {
-    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [] } = opts;
+    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [] } = opts;
     const prof = window.AgeShelfProf(b.prof);
     const max = Math.max(...prof, 1);
     const bars = profAges.map((a, k) => `<i class="${a === age ? 'on' : ''}" style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
@@ -27,6 +27,8 @@
     if (b.k2 && kdcNames[b.k2]) chips.push(`<span class="badge tag" data-f="kdc2" data-v="${esc(b.k2)}">${esc(kdcNames[b.k2])}</span>`);
     if (b.fm) chips.push(`<span class="badge tag" data-f="form" data-v="${esc(b.fm)}">${esc(b.fm)}</span>`);
     const fl = Array.isArray(b.fl) ? b.fl : flagTags.map((_, i) => i).filter((i) => ((b.flb || 0) >> i) & 1);
+    const tp = Array.isArray(b.tp) ? b.tp : topics.map((_, i) => i).filter((i) => ((b.tpb || 0) >> i) & 1);
+    tp.slice(0, 2).forEach((c) => { if (topics[c]) chips.push(`<span class="badge tag topic" data-f="topic" data-v="${c}">${esc(topics[c])}</span>`); });
     fl.slice(0, 2).forEach((c) => { if (flagTags[c]) chips.push(`<span class="badge tag flag" data-f="flag" data-v="${c}">${esc(flagTags[c])}</span>`); });
     return `<a class="card" href="${base}/b/?isbn=${esc(b.i)}">
       <div>${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>

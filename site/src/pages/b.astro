@@ -14,10 +14,11 @@ const showAges: number[] = meta.ages;
 const regionNames: Record<string, string> = (meta as any).region_names ?? {};
 const wCent: number = (meta as any).w_cent ?? 50;
 const wPop: number = (meta as any).w_pop ?? 50;
+const topics: string[] = (meta as any).topics ?? [];
 ---
 <Base title="책 상세">
   <div id="root"><p class="sub">불러오는 중…</p></div>
-  <script is:inline define:vars={{ profAges, labels, base, centMin, minLoans, gamma, flagTags, showAges, regionNames, wCent, wPop }}>
+  <script is:inline define:vars={{ profAges, labels, base, centMin, minLoans, gamma, flagTags, showAges, regionNames, wCent, wPop, topics }}>
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const root = document.getElementById('root');
     const isbn = new URLSearchParams(location.search).get('isbn') || '';
@@ -28,9 +29,17 @@ const wPop: number = (meta as any).w_pop ?? 50;
       const out = [];
       if (b.kdc2n) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?kdc2=${esc(b.kdc2)}">${esc(b.kdc1n)} › ${esc(b.kdc2n)}</a>`);
       if (b.form) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?form=${encodeURIComponent(b.form)}">${esc(b.form)}</a>`);
+      (b.topics || []).forEach((t) => { const i = topics.indexOf(t); if (i >= 0) out.push(`<a class="badge tag topic" href="${base}/age/${tagAge}?topic=${i}">${esc(t)}</a>`); });
       if (b.pubn) out.push(`<a class="badge tag" href="${base}/age/${tagAge}?pub=${encodeURIComponent(b.pubn)}">${esc(b.pubn)}</a>`);
       (b.flags || []).forEach((t) => out.push(`<a class="badge tag flag" href="${base}/age/${tagAge}?flag=${flagTags.indexOf(t)}">${esc(t)}</a>`));
       return out.join('');
+    }
+    function kwBlock(b) {
+      const kw = Array.isArray(b.kw) ? b.kw : [];
+      const head = `<h3 style="font-size:14px;margin:16px 0 4px">책소개 키워드 <span class="sub" style="margin:0;font-weight:400">${kw.length ? kw.length + '개 · 정보나루 책소개·서평에서 추출, 가중치 순' : ''}</span></h3>`;
+      if (!kw.length) return head + '<p class="sub" style="font-size:12px;margin:0">등록된 책소개가 없어 키워드가 없습니다(전집은 대부분 그렇습니다). 주제는 제목·분류 기호로 추정했습니다.</p>';
+      const max = kw[0][1] || 1;
+      return head + `<div class="kwcloud">${kw.map(([w, g]) => `<a class="${g >= max * 0.3 ? 'big' : ''}" href="${base}/search?q=${encodeURIComponent(w)}" style="color:inherit;text-decoration:none" title="가중치 ${g}">${esc(w)}</a>`).join('')}</div>`;
     }
     function render(b) {
       document.title = `${b.title} · AgeShelf`;
@@ -70,6 +79,7 @@ const wPop: number = (meta as any).w_pop ?? 50;
           <div class="bars" style="height:80px">${bars}</div><div class="axis">${axis}</div>
           <div class="tbl"><table>${table}</table></div><p class="sub" style="font-size:11px;margin:4px 0 0">표는 옆으로 밀어 볼 수 있습니다.</p>
           <p class="sub" style="font-size:12px;margin-top:8px"><b>추천도</b>(100점) = 적합도 점수(${wCent} × 연령 적합도) + 인기 점수(${wPop} × log 대출수 ÷ log 그 나이 후보 최대 대출수). 나이마다 최대를 기준으로 환산해 나이끼리 비교할 수 있습니다. 적합도 ${Math.round(centMin * 100)}% 미만이거나 대출 ${minLoans}건 미만인 나이는 후보에서 빠집니다(–). <b>연령 적합도</b>는 이 책 독자 분포에서 그 나이가 중앙에 얼마나 가까운지(중앙 100%, 양 끝 0%)이고, <b>집중도</b>는 13개 나이에 고르게 퍼졌을 때 1입니다.</p>
+          ${kwBlock(b)}
           ${b.detail ? `<p style="font-size:13px"><a href="${esc(b.detail)}" target="_blank" rel="noopener" style="color:var(--accent2)">정보나루 도서 상세 →</a></p>` : ''}
         </div>
       </div>

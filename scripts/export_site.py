@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_metrics import CENT_MIN, GAMMA, MIN_LOANS_AT_AGE, W_CENT, W_POP  # noqa: E402
+from topics import TOPIC_NAMES  # noqa: E402
 from tags import KDC1_NAME, KDC2_NAME  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -120,6 +121,8 @@ def book_card(b: pd.Series) -> dict:
         "kdc2": str(b.get("kdc2", "") or ""), "kdc2n": str(b.get("kdc2_name", "") or ""), "kdc1n": str(b.get("kdc1_name", "") or ""),
         "form": str(b.get("form", "") or ""), "pubn": str(b.get("publisher_norm", "") or ""),
         "flags": flags_of(b), "sk": series_key(b),
+        "topics": [TOPIC_NAMES[i] for i in (b.get("topics", None) if b.get("topics", None) is not None else [])],
+        "kw": json.loads(b["kw"]) if isinstance(b.get("kw", ""), str) and b.get("kw", "") else [],
         "upper": [int(b.get(f"upper_{a}", b[f"loan_{a}"])) for a in ALL_AGES],
         "prof": [float(b[f"prof_{a}"]) for a in ALL_AGES],
         "loans": [int(b[f"loan_{a}"]) for a in ALL_AGES],
@@ -157,7 +160,7 @@ def write_shards(books: pd.DataFrame, out_dir: Path, nshards: int = 1000) -> Non
 def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple[dict, dict]:
     """나이 a 의 얇은 색인(후보 전체 + 인기순 상위)과 facet 요약.
     행: [isbn, 제목, 저자, 출판사idx, 연도, 표지[prefix,rest], 밴드, 중앙나이, 형태코드, 그림책, kdc2, 형태idx,
-         성격비트, 추천도, 인기순위, 위치, 대출, 시리즈id, 비중13자, 자격]"""
+         성격비트, 추천도, 인기순위, 위치, 대출, 시리즈id, 비중13자, 자격, 주제비트]"""
     el = ranks_a[ranks_a.fit_rank.notna()].sort_values("fit_rank")
     pop_extra = ranks_a[ranks_a.fit_rank.isna() & ranks_a.pop_rank.notna()].nsmallest(POP_EXTRA, "pop_rank")
     src = pd.concat([el, pop_extra], ignore_index=True)
@@ -181,10 +184,15 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
             FORMS.index(form) if form in FORMS else 4, flag_bits(b),
             round(float(x.fit_score), 1) if pd.notna(x.fit_score) else 0,
             int(x.pop_rank) if pd.notna(x.pop_rank) else 0, round(float(x.cent), 2), int(x.loan_count), sid, prof_q(b),
-            1 if pd.notna(x.fit_rank) else 0,
+            1 if pd.notna(x.fit_rank) else 0, int(b.get("topic_bits", 0) or 0),
         ])
-    elm = el.merge(books[["kdc2", "form", "publisher_norm", *FLAG_TAGS]], left_on="isbn13", right_index=True)
-    facets: dict[str, list] = {"kdc2": [], "form": [], "pub": [], "flag": []}
+    elm = el.merge(books[["kdc2", "form", "publisher_norm", "topic_bits", *FLAG_TAGS]], left_on="isbn13", right_index=True)
+    facets: dict[str, list] = {"kdc2": [], "form": [], "pub": [], "flag": [], "topic": []}
+    tb = elm.topic_bits.fillna(0).astype(int).to_numpy()
+    for ti, tn in enumerate(TOPIC_NAMES):
+        c = int(((tb >> ti) & 1).sum())
+        if c:
+            facets["topic"].append([ti, tn, c])
     for k2, g in elm[elm.kdc2 != ""].groupby("kdc2"):
         facets["kdc2"].append([k2, KDC2_NAME.get(k2, k2), KDC1_NAME.get(k2[:1], ""), int(len(g))])
     for fm, g in elm.groupby("form"):
@@ -253,6 +261,17 @@ def main():
         if t not in books.columns:
             books[t] = False
         books[t] = books[t].fillna(False).astype(bool)
+    tp_p = src / "book_topics.parquet"
+    if tp_p.exists():
+        tp = pd.read_parquet(tp_p).set_index("isbn13")[["topics", "topic_bits", "kw"]]
+        books = books.join(tp)
+        books["topics"] = books["topics"].apply(lambda v: list(v) if v is not None and not (isinstance(v, float)) else [])
+    else:
+        books["topics"] = [[] for _ in range(len(books))]
+        books["topic_bits"] = 0
+        books["kw"] = ""
+    books["topic_bits"] = books["topic_bits"].fillna(0).astype(int)
+    books["kw"] = books["kw"].fillna("")
     global ALL_AGES
     ALL_AGES = sorted(int(c[5:]) for c in books.columns if c.startswith("prof_"))
     show = [a for a in SHOW_AGES if a in ALL_AGES]
@@ -285,7 +304,7 @@ def main():
     detail = {i: book_card(books.loc[i]) for i in sorted(used)}
     (SITE_DATA / "books.json").write_text(json.dumps(detail, ensure_ascii=False), encoding="utf-8")
 
-    # 검색 색인(전체 도서, 압축 행): [isbn, 제목, 저자, 출판사, 연도, 밴드, peak, 총대출, 상세페이지, 그림책, kdc2, 형태idx, 성격비트, 비중13자]
+    # 검색 색인(전체 도서, 압축 행): [isbn, 제목, 저자, 출판사, 연도, 밴드, peak, 총대출, 상세페이지, 그림책, kdc2, 형태idx, 성격비트, 비중13자, 주제비트, 키워드문자열]
     idx = []
     top_books = books.sort_values("total_loans", ascending=False)
     if SEARCH_MAX:
@@ -296,7 +315,8 @@ def main():
         idx.append([b.isbn13, (b.bookname or "").strip(), (b.authors or "")[:30], (b.publisher or "")[:15],
                     str(b.publication_year or ""), b.band, int(b.peak_age), int(b.total_loans),
                     1 if b.isbn13 in used else 0, 1 if bool(b.is_picture) else 0,
-                    str(row.get("kdc2", "") or ""), FORMS.index(form) if form in FORMS else 4, flag_bits(row), prof_q(row)])
+                    str(row.get("kdc2", "") or ""), FORMS.index(form) if form in FORMS else 4, flag_bits(row), prof_q(row),
+                    int(row.get("topic_bits", 0) or 0), " ".join(w for w, _ in (json.loads(row["kw"]) if row.get("kw", "") else []))])
     PUB.mkdir(parents=True, exist_ok=True)
     (PUB / "search_index.json").write_text(json.dumps(idx, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     write_shards(books, PUB / "books")
@@ -307,7 +327,8 @@ def main():
             "labels": {str(a): AGE_LABELS.get(a, f"{a}세") for a in show},
             "profile_ages": ALL_AGES, "n_books_total": int(len(books)), "n_books_site": len(used),
             "cent_min": CENT_MIN, "min_loans": MIN_LOANS_AT_AGE, "gamma": GAMMA, "w_cent": W_CENT, "w_pop": W_POP,
-            "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS,
+            "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS, "topics": TOPIC_NAMES,
+            "n_keywords": int((books["kw"] != "").sum()),
             "forms": FORMS, "teaser_n": TEASER_N,
             "holdings": holdings_meta, "region_names": REGION_NAMES,
             "source": "도서관정보나루(data4library.kr) 공공도서관 대출 데이터, 전국, 2014~"}

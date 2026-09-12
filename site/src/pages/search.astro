@@ -4,19 +4,21 @@ import meta from '../data/meta.json';
 import searchMeta from '../data/search_meta.json';
 import { SITE_BASE } from '../config';
 // 색인은 /data/search_index.json (public, 전체 도서) 을 런타임에 받아온다.
-// 항목: [isbn13, 제목, 저자, 출판사, 출판년, 밴드, peak, 총대출, 상세페이지 유무, 그림책, kdc2, 형태idx, 성격비트, 비중13자]
+// 항목: [isbn13, 제목, 저자, 출판사, 출판년, 밴드, peak, 총대출, 상세페이지 유무, 그림책, kdc2, 형태idx, 성격비트, 비중13자, 주제비트, 키워드문자열]
 const profAges: number[] = meta.profile_ages;
 const labels: Record<string, string> = (meta as any).labels ?? {};
 const kdc1Names: Record<string, string> = (meta as any).kdc1_names ?? {};
 const kdc2Names: Record<string, string> = (meta as any).kdc2_names ?? {};
 const flagTags: string[] = (meta as any).flag_tags ?? [];
 const forms: string[] = (meta as any).forms ?? [];
+const topics: string[] = (meta as any).topics ?? [];
+const nKeywords: number = (meta as any).n_keywords ?? 0;
 const base = SITE_BASE;
 const nBooks: number = searchMeta.n;
 ---
 <Base title="책 검색">
   <h2>책 검색</h2>
-  <p class="sub">제목·저자·출판사로 {nBooks.toLocaleString()}권 전체를 검색합니다. 결과의 막대는 나이별 선택 비중입니다.</p>
+  <p class="sub">제목·저자·출판사로 {nBooks.toLocaleString()}권 전체를 검색합니다. 상위 {nKeywords.toLocaleString()}권은 책소개 키워드(예: 수수께끼, 변기, 자장가)로도 찾아집니다. 결과의 막대는 나이별 선택 비중입니다.</p>
   <div class="tabs" style="align-items:center;gap:12px;flex-wrap:wrap">
     <input id="q" type="search" placeholder="예: 달님 안녕, 안녕달, 보림" autocomplete="off"
       style="flex:1;min-width:240px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px" />
@@ -25,6 +27,9 @@ const nBooks: number = searchMeta.n;
   </div>
   <details class="filters" id="filters">
     <summary>필터 <span id="filterSummary" class="sub" style="margin:0"></span></summary>
+    <div class="fgroup"><div class="flabel">주제</div>
+      <div class="fchips">{topics.map((t, i) => <button class="chip" data-f="topic" data-v={String(i)}>{t}</button>)}</div>
+    </div>
     <div class="fgroup"><div class="flabel">분야</div>
       <div class="fchips">{Object.entries(kdc1Names).map(([k, n]) => <button class="chip" data-f="kdc1" data-v={k}>{n}</button>)}</div>
     </div>
@@ -37,13 +42,13 @@ const nBooks: number = searchMeta.n;
   </details>
   <div id="out" class="grid"></div>
   <div style="text-align:center;margin:16px 0"><button class="chip" id="moreBtn" type="button" hidden>더 보기</button></div>
-  <script is:inline define:vars={{ profAges, labels, base, kdc1Names, kdc2Names, flagTags, forms }}>
+  <script is:inline define:vars={{ profAges, labels, base, kdc1Names, kdc2Names, flagTags, forms, topics }}>
     const $ = (s) => document.querySelector(s);
     const PAGE = 60;
     const norm = (s) => (s || '').toLowerCase().replace(/\s+/g, '');
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     let rows = [], hits = [], shown = 0;
-    const state = { kdc1: new Set(), form: new Set(), flag: new Set() };
+    const state = { kdc1: new Set(), form: new Set(), flag: new Set(), topic: new Set() };
     const lib = window.AgeShelfLib?.get() || null; let libSet = null;
     if (lib) {
       const note = document.createElement('div'); note.className = 'notice';
@@ -61,17 +66,20 @@ const nBooks: number = searchMeta.n;
       const chips = [];
       if (b.k2 && kdc2Names[b.k2]) chips.push(`<span class="badge tag">${esc(kdc2Names[b.k2])}</span>`);
       if (b.fm) chips.push(`<span class="badge tag">${esc(b.fm)}</span>`);
+      topics.forEach((t, i) => { if (((b.tpb || 0) >> i) & 1 && chips.length < 4) chips.push(`<span class="badge tag topic">${esc(t)}</span>`); });
+      const q = norm($('#q').value);
+      const kwHit = q && !norm(b.title + b.authors + b.pub).includes(q) && b.kw ? b.kw.split(' ').filter((w) => norm(w).includes(q)).slice(0, 3) : [];
       flagTags.forEach((t, i) => { if (((b.flb || 0) >> i) & 1 && chips.length < 5) chips.push(`<span class="badge tag flag">${esc(t)}</span>`); });
       return `<a class="card" href="${href}" style="grid-template-columns:1fr">
         <div><div class="title">${esc(b.title)}</div>
-        <div class="meta">${esc(b.authors)} · ${esc(b.pub)} · ${esc(b.year)} · 총 대출 ${b.total.toLocaleString()}건</div>
+        <div class="meta">${esc(b.authors)} · ${esc(b.pub)} · ${esc(b.year)} · 총 대출 ${b.total.toLocaleString()}건${kwHit.length ? ` · <span style="color:var(--accent2)">키워드 일치: ${esc(kwHit.join(', '))}</span>` : ''}</div>
         <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">가장 많이 고른 나이 ${labels[String(b.peak)] ?? b.peak + '세'}</span>${b.pic ? '<span class="badge pic">그림책</span>' : ''}${chips.join('')}</div>
         <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;
     }
     function syncChips() {
       document.querySelectorAll('.chip[data-f]').forEach((c) => c.classList.toggle('on', state[c.dataset.f].has(c.dataset.v)));
       const parts = [];
-      state.kdc1.forEach((v) => parts.push(kdc1Names[v] || v)); state.form.forEach((v) => parts.push(v)); state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v));
+      state.kdc1.forEach((v) => parts.push(kdc1Names[v] || v)); state.form.forEach((v) => parts.push(v)); state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); state.topic.forEach((v) => parts.push(topics[Number(v)] || v));
       $('#filterSummary').textContent = parts.length ? '· ' + parts.join(', ') : '';
     }
     function renderMore() {
@@ -89,12 +97,13 @@ const nBooks: number = searchMeta.n;
       if (q) params.set('q', $('#q').value); else params.delete('q');
       history.replaceState(null, '', `${location.pathname}${params.toString() ? '?' + params : ''}`);
       if (!rows.length) return;
-      const filtering = state.kdc1.size || state.form.size || state.flag.size;
+      const filtering = state.kdc1.size || state.form.size || state.flag.size || state.topic.size;
       $('#out').innerHTML = ''; shown = 0;
       if (q.length < 1 && !filtering) { hits = []; $('#count').textContent = ''; $('#moreBtn').hidden = true; return; }
       hits = rows.filter((b) => (!q || b.key.includes(q)) && (!picOnly || b.pic) && (!lib || (libSet && libSet.has(b.isbn)))
           && (!state.kdc1.size || state.kdc1.has((b.k2 || '')[0])) && (!state.form.size || state.form.has(b.fm))
-          && (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)))
+          && (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1))
+          && (!state.topic.size || [...state.topic].every((f) => ((b.tpb || 0) >> Number(f)) & 1)))
         .sort((x, y) => (q ? (norm(y.title).startsWith(q) - norm(x.title).startsWith(q)) : 0) || (y.total - x.total));
       $('#count').textContent = `${hits.length.toLocaleString()}건`;
       renderMore();
@@ -105,14 +114,16 @@ const nBooks: number = searchMeta.n;
     document.querySelectorAll('.chip[data-f]').forEach((c) => c.addEventListener('click', () => {
       const s = state[c.dataset.f]; s.has(c.dataset.v) ? s.delete(c.dataset.v) : s.add(c.dataset.v); render();
     }));
-    $('#clearFilters')?.addEventListener('click', () => { state.kdc1.clear(); state.form.clear(); state.flag.clear(); render(); });
+    $('#clearFilters')?.addEventListener('click', () => { state.kdc1.clear(); state.form.clear(); state.flag.clear(); state.topic.clear(); render(); });
+    (new URLSearchParams(location.search).get('topic') || '').split(',').filter(Boolean).forEach((v) => state.topic.add(v));
     const q0 = new URLSearchParams(location.search).get('q');
     if (q0) { $('#q').value = q0; }
     $('#q').focus();
     fetch(`${base}/data/search_index.json?v=${window.__dataVersion || ''}`).then((r) => r.json()).then((index) => {
       rows = index.map((r) => ({ isbn: r[0], title: r[1], authors: r[2], pub: r[3], year: r[4], band: r[5], peak: r[6],
         total: r[7], hasPage: r[8], pic: r[9], k2: r[10] || '', fm: forms[r[11]] || '', flb: r[12] || 0, prof: r[13] || '',
-        key: norm(r[1] + ' ' + r[2] + ' ' + r[3]) }));
+        tpb: r[14] || 0, kw: r[15] || '',
+        key: norm(r[1] + ' ' + r[2] + ' ' + r[3] + ' ' + (r[15] || '')) }));
       $('#count').textContent = '';
       render();
     }).catch(() => { $('#count').textContent = '색인을 불러오지 못했습니다.'; });
