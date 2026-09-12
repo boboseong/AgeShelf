@@ -41,6 +41,19 @@ const current = Astro.url.pathname;
     .badge { font-size:11px; padding:2px 7px; border-radius:999px; background:#f1eee7; color:#4d493f; }
     .badge.band { background:#e6f1ec; color:var(--accent2); font-weight:600; }
     .badge.pic { background:#fdeadb; color:#9a4a12; }
+    /* 상세 페이지: 표(13칸)가 그리드 열을 넓히지 못하게 min-width:0, 좁은 화면은 한 열로 */
+    .detail { grid-template-columns:120px minmax(0,1fr); max-width:760px; }
+    .detail > div { min-width:0; }
+    .detail h2 { font-size:20px; margin:0 0 4px; overflow-wrap:anywhere; }
+    .detail .meta { overflow-wrap:anywhere; }
+    .detail .tbl { overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:12px; }
+    .detail table { font-size:12px; border-collapse:collapse; }
+    .detail table th { position:sticky; left:0; background:var(--card); }
+    @media (max-width:560px) {
+      .detail { grid-template-columns:1fr; }
+      .detail .cover { width:96px !important; height:132px !important; margin:0 auto; }
+      .detail .tbl { margin-left:-12px; margin-right:-12px; padding:0 12px; }
+    }
     .bars { display:flex; align-items:flex-end; gap:2px; height:28px; margin-top:8px; }
     .bars i { flex:1; background:#d8d3c8; border-radius:2px 2px 0 0; min-height:2px; }
     .bars i.on { background:var(--accent); }

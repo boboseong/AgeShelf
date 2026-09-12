@@ -52,7 +52,7 @@ const wPop: number = (meta as any).w_pop ?? 50;
         row('lift(참고)', (b.lifts || []).map((v) => `<td style="${td}">${v.toFixed(2)}</td>`)),
       ].join('');
       root.innerHTML = `
-      <div class="card" style="grid-template-columns:120px 1fr;max-width:760px">
+      <div class="card detail">
         <div>${b.cover ? `<img class="cover" style="width:120px;height:165px" src="${esc(b.cover)}" alt="">` : '<div class="cover" style="width:120px;height:165px"></div>'}</div>
         <div>
           <h2>${esc(b.title)}</h2>
@@ -68,12 +68,12 @@ const wPop: number = (meta as any).w_pop ?? 50;
           <div class="badges" style="margin-top:6px">${tagChips(b)}</div>
           <h3 style="font-size:14px;margin:16px 0 4px">나이별 선택 비중 (코호트 크기 보정 γ=${gamma}, 스무딩)</h3>
           <div class="bars" style="height:80px">${bars}</div><div class="axis">${axis}</div>
-          <div style="overflow-x:auto"><table style="font-size:12px;margin-top:12px;border-collapse:collapse">${table}</table></div>
+          <div class="tbl"><table>${table}</table></div><p class="sub" style="font-size:11px;margin:4px 0 0">표는 옆으로 밀어 볼 수 있습니다.</p>
           <p class="sub" style="font-size:12px;margin-top:8px"><b>추천도</b>(100점) = 적합도 점수(${wCent} × 연령 적합도) + 인기 점수(${wPop} × log 대출수 ÷ log 그 나이 후보 최대 대출수). 나이마다 최대를 기준으로 환산해 나이끼리 비교할 수 있습니다. 적합도 ${Math.round(centMin * 100)}% 미만이거나 대출 ${minLoans}건 미만인 나이는 후보에서 빠집니다(–). <b>연령 적합도</b>는 이 책 독자 분포에서 그 나이가 중앙에 얼마나 가까운지(중앙 100%, 양 끝 0%)이고, <b>집중도</b>는 13개 나이에 고르게 퍼졌을 때 1입니다.</p>
           ${b.detail ? `<p style="font-size:13px"><a href="${esc(b.detail)}" target="_blank" rel="noopener" style="color:var(--accent2)">정보나루 도서 상세 →</a></p>` : ''}
         </div>
       </div>
-      <section id="holdings" class="card" style="grid-template-columns:1fr;max-width:760px;margin-top:12px" hidden>
+      <section id="holdings" class="card" style="grid-template-columns:minmax(0,1fr);max-width:760px;margin-top:12px" hidden>
         <div><h3 style="font-size:15px;margin:0 0 6px">소장 도서관 <span id="holdCount" class="sub" style="margin:0"></span></h3>
         <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 수집 시점의 ISBN 기준입니다. 지금 대출 가능한지는 도서관 홈페이지에서 확인하세요. <button class="chip" id="holdNear" type="button">내 위치에서 가까운 순</button></p>
         <div id="holdList" style="font-size:13px"></div></div>
