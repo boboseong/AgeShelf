@@ -1,6 +1,6 @@
 {
- "generated": "2026-09-12",
- "build": "20260912212319",
+ "generated": "2026-09-13",
+ "build": "20260913061530",
  "sample": false,
  "ages": [
   1,
@@ -35,8 +35,9 @@
   12,
   13
  ],
- "n_books_total": 101790,
+ "n_books_total": 78724,
  "n_books_site": 1708,
+ "site_min_total": 30,
  "cent_min": 0.3,
  "min_loans": 30,
  "gamma": 1.0,
@@ -207,10 +208,10 @@
    "21",
    "38"
   ],
-  "n_books": 57691,
+  "n_books": 57616,
   "n_libs": 176,
   "by_region": {
-   "21": 57691,
+   "21": 57616,
    "38": 1212
   }
  },

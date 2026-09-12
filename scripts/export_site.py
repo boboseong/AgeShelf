@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import shutil
 import re
 import sys
 from pathlib import Path
@@ -36,6 +37,7 @@ TOP_N = 300                       # 나이별 fit/pop 각 300권 → books.json(
 TEASER_N = 60                     # 나이 페이지 HTML 에 박는 첫 화면 카드 수 (나머지는 색인에서 클라이언트가 그림)
 POP_EXTRA = 3000                  # 색인에 추가로 넣는 인기순 상위(자격 미달 포함)
 SEARCH_MAX = None                 # 검색 색인 도서 수 (None = 전체)
+SITE_MIN_TOTAL = 30               # 사이트 전체(검색·상세 조각·소장 파일·색인) 수록 하한: 총 대출 30건 (2026-09-13 사용자 결정)
 SERIES_CAP = None                 # 시리즈당 권수 제한 (None = 제한 없음, 사용자 결정 2026-09-10)
 POOL_PUBLISHERS = 60              # 나이별 출판사 facet 수 (그 나이 후보 도서 수 기준 상위)
 FLAG_TAGS = ["요즘 인기", "베스트셀러", "여러 나이 스테디", "10년 스테디셀러", "먼저 보기 좋은", "커서도 보는"]
@@ -208,7 +210,7 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
     return index, facets
 
 
-def export_holdings(src: Path) -> dict:
+def export_holdings(src: Path, keep: set[str] | None = None) -> dict:
     """도서관 디렉터리(libs.json)와 도서관별 소장 ISBN 파일(libs/{code}.json). 반환: meta 용 요약."""
     global HOLDINGS
     hp, lp = src / "holdings.parquet", src / "libs.parquet"
@@ -216,6 +218,8 @@ def export_holdings(src: Path) -> dict:
         return {"regions": [], "n_books": 0, "n_libs": 0}
     h = pd.read_parquet(hp)
     h = h[h.libCode.astype(str) != ""]
+    if keep is not None:
+        h = h[h.isbn13.isin(keep)]
     libs = pd.read_parquet(lp)
     regions = sorted(pd.read_parquet(hp).region.astype(str).unique())
     HOLDINGS = h.groupby("isbn13")["libCode"].apply(lambda s: sorted(set(s.astype(str)))).to_dict()
@@ -246,9 +250,17 @@ def main():
     ap.add_argument("--top", type=int, default=TOP_N)
     args = ap.parse_args()
     src = ROOT / "data" / ("sample" if args.sample else "processed")
-    holdings_meta = export_holdings(src)
     books = pd.read_parquet(src / "books_metrics.parquet").set_index("isbn13", drop=False)
+    n_all = len(books)
+    books = books[books.total_loans >= SITE_MIN_TOTAL]
     ranks = pd.read_parquet(src / "age_ranks.parquet")
+    ranks = ranks[ranks.isbn13.isin(books.index)]
+    print(f"수록 하한 총 대출 {SITE_MIN_TOTAL}건: {n_all:,} → {len(books):,}권")
+    # 이전 빌드의 조각·소장 파일이 남지 않도록 비운다
+    for d in (PUB / "books", PUB / "libs"):
+        if d.exists():
+            shutil.rmtree(d)
+    holdings_meta = export_holdings(src, set(books.index))
     tags_p = src / "book_tags.parquet"
     if tags_p.exists():
         tags = pd.read_parquet(tags_p).set_index("isbn13")
@@ -325,7 +337,7 @@ def main():
 
     meta = {"generated": dt.date.today().isoformat(), "build": dt.datetime.now().strftime("%Y%m%d%H%M%S"), "sample": args.sample, "ages": show,
             "labels": {str(a): AGE_LABELS.get(a, f"{a}세") for a in show},
-            "profile_ages": ALL_AGES, "n_books_total": int(len(books)), "n_books_site": len(used),
+            "profile_ages": ALL_AGES, "n_books_total": int(len(books)), "n_books_site": len(used), "site_min_total": SITE_MIN_TOTAL,
             "cent_min": CENT_MIN, "min_loans": MIN_LOANS_AT_AGE, "gamma": GAMMA, "w_cent": W_CENT, "w_pop": W_POP,
             "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS, "topics": TOPIC_NAMES,
             "n_keywords": int((books["kw"] != "").sum()),
