@@ -1,10 +1,12 @@
 """도서 키워드 수집 (정보나루 keywordList, 책당 1회, 병렬, 재개 가능)
 
-  대상: 1~7세 추천도 상위 N권 합집합 (--top N). 추천도 최고값이 높은 책부터.
+  대상: --top N → 1~7세 추천도 상위 N권 합집합 / --books site → 사이트 수록 도서 전체(총 대출 30건 이상).
+        어느 쪽이든 추천도 최고값이 높은 책부터(후보가 아닌 책은 총 대출 순).
   출력: data/processed/keywords.parquet (isbn13, word, weight). 키워드가 없는 책은 word="" 한 행으로 '조회 완료' 표시.
   이미 조회한 ISBN 은 건너뛰므로 재실행이 곧 재개.
 
 실행: python scripts/collect_keywords.py --top 3000 --workers 3
+      python scripts/collect_keywords.py --books site --workers 3     # 전체(약 6.7만 회, 일일 한도로 3일)
 """
 from __future__ import annotations
 
@@ -28,9 +30,19 @@ SAVE_EVERY = 1000
 SITE_AGES = range(1, 8)
 
 
-def targets(top: int) -> list[str]:
+SITE_MIN_TOTAL = 30
+
+
+def targets(top: int, books: str = "top") -> list[str]:
     r = pd.read_parquet(PROC / "age_ranks.parquet")
-    e = r[r.fit_rank.notna() & r.age.isin(list(SITE_AGES)) & (r.fit_rank <= top)]
+    e = r[r.fit_rank.notna() & r.age.isin(list(SITE_AGES))]
+    if books == "site":
+        b = pd.read_parquet(PROC / "books_metrics.parquet").set_index("isbn13")
+        b = b[b.total_loans >= SITE_MIN_TOTAL]
+        best = e.groupby("isbn13")["fit_score"].max()
+        order = pd.DataFrame({"fit": best.reindex(b.index).fillna(-1.0), "tot": b.total_loans}).sort_values(["fit", "tot"], ascending=False)
+        return list(order.index)
+    e = e[e.fit_rank <= top]
     best = e.groupby("isbn13")["fit_score"].max().sort_values(ascending=False)
     return list(best.index)
 
@@ -39,13 +51,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--top", type=int, default=3000)
     ap.add_argument("--workers", type=int, default=3)
+    ap.add_argument("--books", choices=["top", "site"], default="top")
     args = ap.parse_args()
 
-    isbns = targets(args.top)
+    isbns = targets(args.top, args.books)
     old = pd.read_parquet(OUT) if OUT.exists() else pd.DataFrame(columns=["isbn13", "word", "weight"])
     done = set(old.isbn13)
     jobs = [i for i in isbns if i not in done]
-    print(f"대상 {len(isbns):,}권 (상위 {args.top}) → 남은 호출 {len(jobs):,}회 (동시 {args.workers})", flush=True)
+    print(f"대상 {len(isbns):,}권 ({'사이트 전체' if args.books == 'site' else f'상위 {args.top}'}) → 남은 호출 {len(jobs):,}회 (동시 {args.workers})", flush=True)
 
     rows: list[dict] = []
     lock = threading.Lock()
@@ -60,7 +73,7 @@ def main():
     def work(isbn):
         try:
             r = naru.call("keywordList", cache=True, isbn13=isbn, additionalYN="N")
-        except naru.NaruError as e:
+        except Exception as e:   # NaruError 외에 연결 끊김(ConnectionReset) 등도 한 건 오류로 넘기고 계속
             with lock:
                 state["err"] += 1
                 if state["err"] <= 5:

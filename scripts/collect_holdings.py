@@ -90,7 +90,7 @@ def fetch_holdings(isbns: list[str], regions: list[str], workers: int) -> pd.Dat
         isbn, region = job
         try:
             r = naru.call("libSrchByBook", cache=False, isbn=isbn, region=region, pageNo=1, pageSize=2000)
-        except Exception as e:  # noqa: BLE001  연결 끊김 등 무엇이든 건별 오류로 세고 계속(한 건 때문에 전체가 멈추지 않게)
+        except Exception as e:   # NaruError 외에 연결 끊김(ConnectionReset) 등도 한 건 오류로 넘기고 계속
             with lock:
                 state["err"] += 1
                 if state["err"] <= 5:
