@@ -13354,5 +13354,234 @@
    "흔한남매"
   ],
   "url": "https://www.busanjin.go.kr/library/index.busanjin?menuCd=DOM_000002103001000000&booktype=BOOK&pageno=1&manage_code=CH&search_title={t}"
+ },
+ "lib:148008": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "밀양시립: 검색 페이지는 세션 토큰(tId)이 있어야 결과를 불러와서, 결과 조각 주소(ajax)를 직접 연다(사이트 디자인 없이 결과만)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "https://www.myclib.or.kr/web/ksh/ajaxBookSearchList.do?mnNo=301000000&schTy=search_all&schNm={t}"
+ },
+ "lib:148013": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "창원시 도서관사업소 마산회원",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.changwon.go.kr/book/search.php?search_txt={t}&manage_code=ME&pageno=1&display=10&search_type=normal&lib_code=cl"
+ },
+ "lib:148022": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "진주시립 DLS 연암",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5BMA%5D=MA&searchItem%5B%5D=total&searchWord%5B%5D={t}"
+ },
+ "lib:148023": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "창원시 도서관사업소 진해",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.changwon.go.kr/book/search.php?search_txt={t}&manage_code=MJ&pageno=1&display=10&search_type=normal&lib_code=cl"
+ },
+ "lib:148035": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "창원시 도서관사업소 창원중앙(결과는 data2.php 로 늦게 그림, 파라미터 전부 필요 — 빠지면 '비정상 접근')",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.changwon.go.kr/book/search.php?search_txt={t}&manage_code=MA&pageno=1&display=10&search_type=normal&lib_code=cl"
+ },
+ "lib:148038": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "통영시립 꿈이랑",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.tongyeonglib.or.kr/library/index.php?g_page=search&m_page=search01&search_mod=wdDataSearchTot&manageCode=MA&searchWord={t}"
+ },
+ "lib:148040": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "진주시립 DLS 서부",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5BBR%5D=BR&searchItem%5B%5D=total&searchWord%5B%5D={t}"
+ },
+ "lib:148043": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "창원시 도서관사업소 마산합포",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.changwon.go.kr/book/search.php?search_txt={t}&manage_code=MG&pageno=1&display=10&search_type=normal&lib_code=cl"
+ },
+ "lib:148044": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "통영시립 욕지",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.tongyeonglib.or.kr/library/index.php?g_page=search&m_page=search01&search_mod=wdDataSearchTot&manageCode=MB&searchWord={t}"
+ },
+ "lib:148047": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "진주시립 DLS 어린이전문",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5BBC%5D=BC&searchItem%5B%5D=total&searchWord%5B%5D={t}"
+ },
+ "lib:148068": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "진주시립 DLS 비봉어린이",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5BLC%5D=LC&searchItem%5B%5D=total&searchWord%5B%5D={t}"
+ },
+ "lib:148086": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "진주시립 DLS 도동어린이",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5BDC%5D=DC&searchItem%5B%5D=total&searchWord%5B%5D={t}"
+ },
+ "lib:148100": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "통영시립 통합검색(DLS 는 iframe 안에서만 허용 → 부모 페이지로)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "https://www.tongyeonglib.or.kr/library/index.php?g_page=search&m_page=search01&search_mod=wdDataSearchTot&manageCode=MC&searchWord={t}"
+ },
+ "lib:148120": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "창원시 도서관사업소 성산",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.changwon.go.kr/book/search.php?search_txt={t}&manage_code=MB&pageno=1&display=10&search_type=normal&lib_code=cl"
+ },
+ "lib:148182": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "함안군립칠원도서관: KOLAS 검색 결과(search_result.do)가 2026-09-23 기준 사이트에서 직접 검색해도 응답 없음",
+  "ok": false,
+  "page": "http://cwl.haman.go.kr:8800/kolas3_2018/BookStand/search_simple.do"
+ },
+ "lib:148238": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "통영시립 충무(죽림)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.tongyeonglib.or.kr/library/index.php?g_page=search&m_page=search01&search_mod=wdDataSearchTot&manageCode=MD&searchWord={t}"
+ },
+ "lib:748245": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "양산통합도서관 상하북종합사회복지관 작은도서관",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "https://lib.yangsan.go.kr/YS/search/search.do?search_manage_code=GX&search_txt={t}"
+ },
+ "lib:748286": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "양산통합도서관 삼성공립작은도서관",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://lib.yangsan.go.kr/YS/search/search.do?search_manage_code=HF&search_txt={t}"
  }
 }

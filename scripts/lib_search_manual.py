@@ -1,4 +1,6 @@
-"""부산 미연결 20곳 수동 템플릿(2026-09-23 조사) → data/lib_search.json 의 "lib:<도서관코드>" 항목으로 검증 후 저장.
+"""자동 탐색으로 못 찾은 도서관의 수동 템플릿(부산·경남, 2026-09-23 조사) → data/lib_search.json 의 "lib:<도서관코드>" 항목으로 검증 후 저장.
+
+실행: python scripts/lib_search_manual.py [--only 코드,코드]
 
 홈페이지 단위 템플릿으로는 한 홈페이지를 여러 도서관이 공유하거나(부산진구 당감·기적의) 홈페이지가 죽은 곳(busanlib.net)을
 구분할 수 없어, 도서관 코드 단위로 지정한다. export_site 는 "lib:<코드>" 를 홈페이지 항목보다 먼저 본다.
@@ -38,9 +40,36 @@ SPEC = {  # libCode: (템플릿, 설명)
     "121025": (HUB.format(hub="ssbooks", mc="AW"), "부산 통합검색 허브 사상(홈페이지 링크의 구청 통합검색은 오탐)"),
     "121018": (HUB.format(hub="gjbooks", mc="AP"), "부산 통합검색 허브 금정(옛 홈페이지는 구청 첫 화면으로 넘어감)"),
 }
+# ---- 경남
+CW = "https://lib.changwon.go.kr/book/search.php?search_txt={{t}}&manage_code={mc}&pageno=1&display=10&search_type=normal&lib_code=cl"
+JJ = "https://lib.jinju.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&manageCode%5B{mc}%5D={mc}&searchItem%5B%5D=total&searchWord%5B%5D={{t}}"
+TY = "https://www.tongyeonglib.or.kr/library/index.php?g_page=search&m_page=search01&search_mod=wdDataSearchTot&manageCode={mc}&searchWord={{t}}"
+YS = "https://lib.yangsan.go.kr/YS/search/search.do?search_manage_code={mc}&search_txt={{t}}"
+SPEC.update({
+    "148035": (CW.format(mc="MA"), "창원시 도서관사업소 창원중앙(결과는 data2.php 로 늦게 그림, 파라미터 전부 필요 — 빠지면 '비정상 접근')"),
+    "148120": (CW.format(mc="MB"), "창원시 도서관사업소 성산"),
+    "148013": (CW.format(mc="ME"), "창원시 도서관사업소 마산회원"),
+    "148043": (CW.format(mc="MG"), "창원시 도서관사업소 마산합포"),
+    "148023": (CW.format(mc="MJ"), "창원시 도서관사업소 진해"),
+    "148022": (JJ.format(mc="MA"), "진주시립 DLS 연암"),
+    "148040": (JJ.format(mc="BR"), "진주시립 DLS 서부"),
+    "148047": (JJ.format(mc="BC"), "진주시립 DLS 어린이전문"),
+    "148068": (JJ.format(mc="LC"), "진주시립 DLS 비봉어린이"),
+    "148086": (JJ.format(mc="DC"), "진주시립 DLS 도동어린이"),
+    "148100": (TY.format(mc="MC"), "통영시립 통합검색(DLS 는 iframe 안에서만 허용 → 부모 페이지로)"),
+    "148238": (TY.format(mc="MD"), "통영시립 충무(죽림)"),
+    "148038": (TY.format(mc="MA"), "통영시립 꿈이랑"),
+    "148044": (TY.format(mc="MB"), "통영시립 욕지"),
+    "148008": ("https://www.myclib.or.kr/web/ksh/ajaxBookSearchList.do?mnNo=301000000&schTy=search_all&schNm={t}",
+               "밀양시립: 검색 페이지는 세션 토큰(tId)이 있어야 결과를 불러와서, 결과 조각 주소(ajax)를 직접 연다(사이트 디자인 없이 결과만)"),
+    "748286": (YS.format(mc="HF"), "양산통합도서관 삼성공립작은도서관"),
+    "748245": (YS.format(mc="GX"), "양산통합도서관 상하북종합사회복지관 작은도서관"),
+})
 PAGE_ONLY = {  # 온라인 소장 조회가 안 되는 곳: 현재 홈페이지의 검색 페이지로만 안내
     "126032": ("https://dlib.gijang.go.kr/dlib/book/search.do?mId=0201010000",
                "기장디지털도서관: 옛 주소 busanlib.net 폐쇄, dlib.gijang.go.kr 자체 검색은 결과가 비고 부산 통합검색·기장군 통합검색에도 없음"),
+    "148182": ("http://cwl.haman.go.kr:8800/kolas3_2018/BookStand/search_simple.do",
+               "함안군립칠원도서관: KOLAS 검색 결과(search_result.do)가 2026-09-23 기준 사이트에서 직접 검색해도 응답 없음"),
 }
 
 
@@ -52,13 +81,15 @@ async def fetch(br, tpl: str, q: str) -> str:
     try:
         pg = await ctx.new_page(); await pg.goto(P.ORIGIN)
         await pg.goto(tpl.replace("{t}", urllib.parse.quote(q)), wait_until="domcontentloaded", timeout=40000)
-        await B.settle(pg, 3500); return await B.body_text(pg)
+        await B.settle(pg, 4000)
+        return " | ".join([await f.evaluate("document.body ? document.body.innerText : ''") for f in pg.frames])
     finally:
         await ctx.close()
 
 
 async def main():
     from playwright.async_api import async_playwright
+    only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     libs, hold, books, popular = L.load_inputs()
     out = json.load(open(L.OUT, encoding="utf-8"))
     names = dict(zip(libs.libCode.astype(str), libs.libName))
@@ -81,7 +112,7 @@ async def main():
                                               "libs": 1, "sample": [b["isbn"], b["title"][:40]], "note": why}
                     break
                 print(f"  {verdict:<12} {code} {names.get(code, '')}", flush=True)
-        await asyncio.gather(*(one(c) for c in SPEC))
+        await asyncio.gather(*(one(c) for c in SPEC if only is None or c in only))
         await br.close()
     for code, (page, why) in PAGE_ONLY.items():
         out[f"lib:{code}"] = {"ok": False, "how": "manual", "page": page, "checked": str(date.today()), "libs": 1, "note": why}
