@@ -244,7 +244,7 @@ def export_holdings(src: Path, keep: set[str] | None = None) -> dict:
         rows.append([str(x.libCode), s_(x.libName), s_(x.address), None if pd.isna(x.latitude) else round(float(x.latitude), 5),
                      None if pd.isna(x.longitude) else round(float(x.longitude), 5), str(x.region), s_(x.homepage),
                      s_(x.operatingTime), s_(x.closed), int(len(by_lib.get(str(x.libCode), []))), search_of(s_(x.homepage))])
-    n_search = sum(1 for r in rows if r[10] and ("{q}" in r[10] or "{t}" in r[10]))
+    n_search = sum(1 for r in rows if r[10] and ("{q}" in r[10] or "{t}" in r[10]))   # POST 템플릿("POST enc action k={t}")도 포함
     n_page = sum(1 for r in rows if r[10]) - n_search
     print(f"검색 링크: 결과로 바로 {n_search:,}곳, 검색 페이지만 {n_page:,}곳, 없음 {len(rows)-n_search-n_page:,}곳")
     (PUB / "libs.json").write_text(json.dumps({"fields": ["code", "name", "addr", "lat", "lon", "region", "home", "hours", "closed", "n", "search"],

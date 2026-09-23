@@ -143,22 +143,18 @@
   "url": "https://cnbl.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000639&manageCode=MC&searchCondition=ALL&searchTxt={q}"
  },
  "http://cwlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://cwlib.gne.go.kr/book/search.es?mid=a20301000000",
-  "result_url": "https://cwlib.gne.go.kr/book/search.es?mid=a20301000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://cwlib.gne.go.kr/book/search.es?mid=a20301000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=CW000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://dalseong.daegu.kr/culture//index.do?menu_id=00001923": {
   "checked": "2026-09-17",
@@ -357,24 +353,18 @@
   "page": "https://www.dyelib.go.kr/msi/cntntsService.do?menuId=MNU_0000000000000130"
  },
  "http://dylib.jne.go.kr/": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://dylib.jne.go.kr/book/search_book/search.es?mid=a60101010100",
-  "result_url": "https://dylib.jne.go.kr/book/search_book/search.es?mid=a60101010100",
+  "query": "title",
   "sample": [
    "9788993242706",
    "장수탕 선녀님 "
-  ]
+  ],
+  "url": "POST utf-8 https://dylib.jne.go.kr/book/search_book/search.es?mid=a60101010100 vSrchText0={t}"
  },
  "http://edu.eunpyeong.go.kr/?p=20": {
   "books_tried": [
@@ -407,22 +397,18 @@
   "page": "https://eng.myclib.or.kr/?page_id=search_01"
  },
  "http://gclib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://gclib.gne.go.kr/book/search.es?mid=b90101000000",
-  "result_url": "https://gclib.gne.go.kr/book/search.es?mid=b90101000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://gclib.gne.go.kr/book/search.es?mid=b90101000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=GC000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://gclib.sen.go.kr/": {
   "checked": "2026-09-17",
@@ -482,22 +468,18 @@
   ]
  },
  "http://ghjhlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://ghjhlib.gne.go.kr/book/search.es?mid=d20201000000",
-  "result_url": "https://ghjhlib.gne.go.kr/book/search.es?mid=d20201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://ghjhlib.gne.go.kr/book/search.es?mid=d20201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=GHJH0000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://ghlife.jne.go.kr/": {
   "books_tried": [
@@ -606,23 +588,18 @@
   "url": "https://gslib.sen.go.kr/gslib/intro/search/index.do?menu_idx=4&locExquery=111005&editMode=normal&officeNm=%EA%B0%95%EC%84%9C%EB%8F%84%EC%84%9C%EA%B4%80&lectureNm=&mainSearchType=on&search_text={t}"
  },
  "http://gylib.jne.go.kr/": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://gylib.jne.go.kr/book/search_book/search.es?mid=a50101010100",
-  "result_url": "https://gylib.jne.go.kr/book/search_book/search.es?mid=a50101010100",
+  "query": "title",
   "sample": [
    "9791195794799",
    "설민석의 한국사 대모험"
-  ]
+  ],
+  "url": "POST utf-8 https://gylib.jne.go.kr/book/search_book/search.es?mid=a50101010100 curPageNum=1&pageSize=12&searchKind=00146025&type=album&searchvLmt=&searchvIncType=&detailYn=&vSrchKey0=0&vSrchText0={t}&searchKeyWord=0&searchWordText={t}&vSearchType=FRNT&searchKeyWordDetail=1&searchWordTextDetail=&vSrchOp0=AND&vSrchKey1=2&vSrchText1=&vSrchOp1=AND&vSrchKey2=3&vSrchText2=&all_vLmt0=&all_vIncType=&vOI=DISP01"
  },
  "http://gylife.jne.go.kr/": {
   "books_tried": [
@@ -640,22 +617,18 @@
   "page": "https://gylife.jne.go.kr/book/search_book/search.es?mid=c30101010100"
  },
  "http://hmlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://hmlib.gne.go.kr/book/search.es?mid=a70201000000",
-  "result_url": "https://hmlib.gne.go.kr/book/search.es?mid=a70201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://hmlib.gne.go.kr/book/search.es?mid=a70201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=HM000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://hnlib.jne.go.kr/": {
   "books_tried": [
@@ -722,22 +695,18 @@
   "ok": false
  },
  "http://jdlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://jdlib.gne.go.kr/book/search.es?mid=b60201010000",
-  "result_url": "https://jdlib.gne.go.kr/book/search.es?mid=b60201010000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://jdlib.gne.go.kr/book/search.es?mid=b60201010000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=JD000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://jdlib.jne.go.kr/": {
   "books_tried": [
@@ -1684,19 +1653,18 @@
   "url": "http://libbook.gimhae.go.kr:8080/search/list.do?cpage=1&_es=1&dong=&stype=total&oby=&sstring={t}"
  },
  "http://lib.goryeong.go.kr": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title,no-title,no-title,no-title,",
-  "ok": false,
-  "page": "http://lib.goryeong.go.kr/book/bookCommon.do?jspFile=ownBooksSearch&searchLibCode="
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "http://lib.goryeong.go.kr/book/bookCommon.do?jspFile=ownBooksSearch&searchLibCode=",
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 http://lib.goryeong.go.kr:8480/Ksearch/search/list.jsp pageNum=1&pageSize=10&libCd=1&FIELD_1=IAL&VALUE_1={t}&MANAGE_CODE=147167"
  },
  "http://lib.gumi.go.kr": {
   "books_tried": [
@@ -2474,19 +2442,18 @@
   "url": "http://library.gyeongju.go.kr/?page_id=search_booklist&mode=tBookList&collection=tot_book&search_field1=IAL&search_txt={q}"
  },
  "http://library.jeonbuk.go.kr/": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "no-candidates",
-  "ok": false,
-  "page": "https://library.jeonbuk.go.kr/main/sub.php?mno=18"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://library.jeonbuk.go.kr/main/sub.php?mno=18",
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.jeonbuk.go.kr:8443/kolas3_01/BookSearch/search_result.do jongbook=_book&field1=IAL&value1={t}&aon1=AND&field2=IT&value2=&aon2=AND&field3=IA&value3=&aon3=AND&buho1=SIB&buhovalue1=&aon4=AND&buho2=KDC&buhovalue2=&aon5=AND&buhovalue3=&univname=&aon6=AND&buhovalue4=&govname=&sort=RK%20DESC&msa=&formclass=&textlang=&simplelang=&startyear=&endyear=&mgc=MA&limitpage=10&local=%20&x=0&y=0&startpage=1&mode=0"
  },
  "http://library.sokcho.go.kr": {
   "checked": "2026-09-17",
@@ -2526,24 +2493,18 @@
   "url": "https://library.yeoncheon.go.kr/searchResultList.do?searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchLibrary=ALL&searchKeyword={t}"
  },
  "http://malib.jne.go.kr/": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://malib.jne.go.kr/book/search_book/search.es?mid=b50101010100",
-  "result_url": "https://malib.jne.go.kr/book/search_book/search.es?mid=b50101010100",
+  "query": "title",
   "sample": [
    "9788993242706",
    "장수탕 선녀님 "
-  ]
+  ],
+  "url": "POST utf-8 https://malib.jne.go.kr/book/search_book/search.es?mid=b50101010100 curPageNum=1&pageSize=12&searchKind=00146011&type=album&searchvLmt=&searchvIncType=&detailYn=&vSrchKey0=0&vSrchText0={t}&searchKeyWord=0&searchWordText={t}&vSearchType=FRNT&searchKeyWordDetail=1&searchWordTextDetail=&vSrchOp0=AND&vSrchKey1=2&vSrchText1=&vSrchOp1=AND&vSrchKey2=3&vSrchText2=&all_vLmt0=&all_vIncType=&vOI=DISP01"
  },
  "http://mplib.jne.go.kr/": {
   "books_tried": [
@@ -2584,22 +2545,18 @@
   "url": "https://mpllc.sen.go.kr/mpllc/intro/search/index.do?menu_idx=4&locExquery=111014&editMode=normal&officeNm=%EB%A7%88%ED%8F%AC%ED%8F%89%EC%83%9D%ED%95%99%EC%8A%B5%EA%B4%80&lectureNm=&keyword=&mainSearchType=on&search_text={t}"
  },
  "http://mslib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://mslib.gne.go.kr/book/search.es?mid=a40101000000",
-  "result_url": "https://mslib.gne.go.kr/book/search.es?mid=a40101000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://mslib.gne.go.kr/book/search.es?mid=a40101000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=MS000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://naegok.seocholib.or.kr/": {
   "checked": "2026-09-17",
@@ -2697,40 +2654,32 @@
   "url": "https://public.seocholib.or.kr/KeywordSearchResult/{q}"
  },
  "http://salib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://salib.gne.go.kr/book/search.es?mid=c20201000000",
-  "result_url": "https://salib.gne.go.kr/book/search.es?mid=c20201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://salib.gne.go.kr/book/search.es?mid=c20201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=SA000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://scplib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://scplib.gne.go.kr/book/search.es?mid=a60101000000",
-  "result_url": "https://scplib.gne.go.kr/book/search.es?mid=a60101000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://scplib.gne.go.kr/book/search.es?mid=a60101000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=SCP00000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://sdmlib.sen.go.kr/": {
   "checked": "2026-09-17",
@@ -2817,22 +2766,18 @@
   "ok": false
  },
  "http://urlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://urlib.gne.go.kr/book/search.es?mid=c50201000000",
-  "result_url": "https://urlib.gne.go.kr/book/search.es?mid=c50201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://urlib.gne.go.kr/book/search.es?mid=c50201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=UR000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "http://www.apl.go.kr/": {
   "checked": "2026-09-17",
@@ -3598,37 +3543,32 @@
   "url": "https://www.icheonlib.go.kr/search/tot/result?si=TOTAL&st=KWRD&si=1&q={t}&x=0&y=0&__verified_refresh=1"
  },
  "http://www.imla.kr/sb": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.imla.kr/sb/index.do?curl=/jsp/book_search/best_search.jsp?bbsId=43&menu1=2&menu2=43&scd=2"
- },
- "http://www.issl.go.kr/": {
-  "books_tried": [
-   "9791164134267"
-  ],
-  "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
-  "libs": 5,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
-  "page": "https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597",
-  "result_url": "https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597",
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.imla.kr/sb/index.do?curl=/jsp/book_search/best_search.jsp?bbsId=43&menu1=2&menu2=43&scd=2",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.imla.kr:7443/search/list.jsp pageNum=1&pageSize=10&SORT_FIELD=ALL&SORT_METHOD=DESC&FIELD_1=IAL&VALUE_1={t}&MANAGE_CODE=128017"
+ },
+ "http://www.issl.go.kr/": {
+  "checked": "2026-09-23",
+  "how": "post",
+  "libs": 5,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597",
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597 searchKeyword={t}"
  },
  "http://www.jcelib.go.kr/": {
   "books_tried": [
@@ -4310,14 +4250,18 @@
   "page": "https://www.yeongdo.go.kr/search/searchResult.web?sstring=%ED%9D%94%ED%95%9C%EB%82%A8%EB%A7%A4"
  },
  "http://www.yeonje.go.kr/library": {
-  "bad_url": "https://library.busan.go.kr/yjbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/yjbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/yjbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=BH%2CCC%2CHS%2CHT%2CHU%2CJW%2CKW&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "http://www.yjlib.go.kr": {
   "checked": "2026-09-17",
@@ -4608,22 +4552,18 @@
   "url": "https://cle.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000160&manageCode=MB&searchCondition=ALL&searchTxt={q}"
  },
  "https://cnlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://cnlib.gne.go.kr/book/search.es?mid=c30201000000",
-  "result_url": "https://cnlib.gne.go.kr/book/search.es?mid=c30201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://cnlib.gne.go.kr/book/search.es?mid=c30201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=CN000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://csbl.cne.go.kr/": {
   "checked": "2026-09-17",
@@ -4691,24 +4631,18 @@
   "url": "https://geuntae.co.kr/total_search?q={t}"
  },
  "https://ghlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://ghlib.gne.go.kr/book/search.es?mid=a30301000000",
-  "result_url": "https://ghlib.gne.go.kr/book/search.es?mid=a30301000000",
+  "query": "title",
   "sample": [
    "9788993242706",
    "장수탕 선녀님 "
-  ]
+  ],
+  "url": "POST utf-8 https://ghlib.gne.go.kr/book/search.es?mid=a30301000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=GH000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://gjl.gimje.go.kr/": {
   "checked": "2026-09-17",
@@ -4737,22 +4671,18 @@
   "url": "https://gjlib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000225&manageCode=MF&searchCondition=ALL&searchTxt={q}"
  },
  "https://gjlib.gne.go.kr/index.es?sid=c7": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,no-title,no-title,no-title,",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://gjlib.gne.go.kr/book/search.es?mid=c70201000000",
-  "result_url": "https://gjlib.gne.go.kr/book/search.es?mid=c70201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://gjlib.gne.go.kr/book/search.es?mid=c70201000000 searchKind=GJ000000&searchKeyword={t}"
  },
  "https://gjlib.jeonnam-gwangju.go.kr": {
   "checked": "2026-09-17",
@@ -4800,22 +4730,18 @@
   "page": "https://gmlib.gm.go.kr/front/index.php?g_page=search&m_page=search01"
  },
  "https://gslib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://gslib.gne.go.kr/book/search.es?mid=b30204000000",
-  "result_url": "https://gslib.gne.go.kr/book/search.es?mid=b30204000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://gslib.gne.go.kr/book/search.es?mid=b30204000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=GS000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://gylib.sen.go.kr": {
   "checked": "2026-09-17",
@@ -4831,40 +4757,32 @@
   "url": "https://gylib.sen.go.kr/gylib/intro/search/index.do?menu_idx=8&locExquery=111548&editMode=normal&officeNm=%EA%B0%80%EC%96%91%EB%8F%84%EC%84%9C%EA%B4%80&lectureNm=&search_text={q}"
  },
  "https://hclib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://hclib.gne.go.kr/book/search.es?mid=b80401000000",
-  "result_url": "https://hclib.gne.go.kr/book/search.es?mid=b80401000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://hclib.gne.go.kr/book/search.es?mid=b80401000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=HC000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://hdlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://hdlib.gne.go.kr/book/search.es?mid=a50201000000",
-  "result_url": "https://hdlib.gne.go.kr/book/search.es?mid=a50201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://hdlib.gne.go.kr/book/search.es?mid=a50201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=HD000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://hmlib.cne.go.kr": {
   "checked": "2026-09-17",
@@ -4880,52 +4798,60 @@
   "url": "https://hmlib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000675&manageCode=ML&searchCondition=ALL&searchTxt={q}"
  },
  "https://hnlib.gne.go.kr": {
-  "books_tried": [
-   "9791195794799"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://hnlib.gne.go.kr/book/search.es?mid=b50301000000",
-  "result_url": "https://hnlib.gne.go.kr/book/search.es?mid=b50301000000",
+  "query": "title",
   "sample": [
    "9791195794799",
    "설민석의 한국사 대모험"
-  ]
+  ],
+  "url": "POST utf-8 https://hnlib.gne.go.kr/book/search.es?mid=b50301000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=HN000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://home.pen.go.kr/bansonglib": {
-  "bad_url": "https://library.busan.go.kr/bslbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/bslbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/bslbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=AC&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://home.pen.go.kr/bellib": {
-  "bad_url": "https://library.busan.go.kr/bengbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/bengbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9781406301564",
+   "Hooray for fish! "
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/bengbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=BA&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://home.pen.go.kr/bujunlib/": {
-  "bad_url": "https://library.busan.go.kr/bjbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/bjbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/bjbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=AD&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://home.pen.go.kr/guducklib": {
   "checked": "2026-09-17",
@@ -5074,22 +5000,18 @@
   "url": "https://hslib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000239&manageCode=MS&searchCondition=ALL&searchTxt={q}"
  },
  "https://hylib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://hylib.gne.go.kr/book/search.es?mid=a80201000000",
-  "result_url": "https://hylib.gne.go.kr/book/search.es?mid=a80201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://hylib.gne.go.kr/book/search.es?mid=a80201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=HY000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://jamwon.seocholib.or.kr": {
   "checked": "2026-09-17",
@@ -5117,40 +5039,32 @@
   "ok": false
  },
  "https://jhlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://jhlib.gne.go.kr/book/search.es?mid=d10701000000",
-  "result_url": "https://jhlib.gne.go.kr/book/search.es?mid=d10701000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://jhlib.gne.go.kr/book/search.es?mid=d10701000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=JH000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://jylib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://jylib.gne.go.kr/book/search.es?mid=a90101000000",
-  "result_url": "https://jylib.gne.go.kr/book/search.es?mid=a90101000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://jylib.gne.go.kr/book/search.es?mid=a90101000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=JY000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://kslib.cne.go.kr": {
   "checked": "2026-09-17",
@@ -5418,22 +5332,18 @@
   "url": "https://lib.boeun.go.kr/dls_lt/index.php?mod=wdDataSearch&act=searchResultList&searchType=simple&searchWord={t}"
  },
  "https://lib.bukgu.gwangju.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 5,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://lib.bukgu.gwangju.kr/main/bookSearch.do?PID=0301",
-  "result_url": "https://lib.bukgu.gwangju.kr/main/bookSearch.do?PID=0301",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://lib.bukgu.gwangju.kr/main/bookSearch.do?PID=0301 searchText={t}&libCode=124010&libCode=129131&libCode=129225&libCode=129226&libCode=129227"
  },
  "https://lib.changwon.go.kr/bm/index_real.php": {
   "books_tried": [
@@ -5538,34 +5448,32 @@
   "ok": false
  },
  "https://lib.ddc.go.kr": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788936446819"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://lib.ddc.go.kr/ddclib/contents.do?key=708"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://lib.ddc.go.kr/ddclib/contents.do?key=708",
+  "query": "title",
+  "sample": [
+   "9788936446819",
+   "수박 수영장 :안녕달 그림책 "
+  ],
+  "url": "POST utf-8 https://lib.ddc.go.kr/kolaseek/plus/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=ALL&searchKeyword={t}&searchLibrary=ALL&searchLibraryArr=MA&searchLibraryArr=MC&searchLibraryArr=MB&searchLibraryArr=SB&searchLibraryArr=SE"
  },
  "https://lib.ddc.go.kr/": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 2,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://lib.ddc.go.kr/ddclib/contents.do?key=708"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://lib.ddc.go.kr/ddclib/contents.do?key=708",
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "POST utf-8 https://lib.ddc.go.kr/kolaseek/plus/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=ALL&searchKeyword={t}&searchLibrary=ALL&searchLibraryArr=MA&searchLibraryArr=MC&searchLibraryArr=MB&searchLibraryArr=SB&searchLibraryArr=SE"
  },
  "https://lib.donggu.kr": {
   "checked": "2026-09-17",
@@ -5633,40 +5541,32 @@
   "url": "https://lib.eumseong.go.kr/front/index.php?g_page=search&m_page=search01&search_type=NORMAL&search_txt={t}"
  },
  "https://lib.geoje.go.kr": {
-  "books_tried": [
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 6,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do",
-  "result_url": "https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do",
+  "query": "title",
   "sample": [
    "9788993242706",
    "장수탕 선녀님 "
-  ]
+  ],
+  "url": "POST utf-8 https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do research_yn=N&search_type=normal&lib=All&manage_code=MD&manage_code=MF&manage_code=MB&manage_code=MC&manage_code=MA&manage_code=ME&lib=All&manage_code=SE&manage_code=SD&manage_code=SA&manage_code=SC&manage_code=SG&manage_code=SH&manage_code=SF&book_type=BOOK&search_txt={t}&input_detail_book_type=BOOK&detail_title=&detail_author=&detail_publisher=&detail_keyword=&detail_search_isbn_issn=&search_year_start=&search_year_end="
  },
  "https://lib.geoje.go.kr/": {
-  "books_tried": [
-   "9791195794799"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 6,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,always-shows,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do",
-  "result_url": "https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do",
+  "query": "title",
   "sample": [
    "9791195794799",
    "설민석의 한국사 대모험"
-  ]
+  ],
+  "url": "POST utf-8 https://lib.geoje.go.kr/com/requestPage.do?selMenuNo=103010000&returnUrl=/service/bookSearch.do research_yn=N&search_type=normal&lib=All&manage_code=MD&manage_code=MF&manage_code=MB&manage_code=MC&manage_code=MA&manage_code=ME&lib=All&manage_code=SE&manage_code=SD&manage_code=SA&manage_code=SC&manage_code=SG&manage_code=SH&manage_code=SF&book_type=BOOK&search_txt={t}&input_detail_book_type=BOOK&detail_title=&detail_author=&detail_publisher=&detail_keyword=&detail_search_isbn_issn=&search_year_start=&search_year_end="
  },
  "https://lib.gjcity.go.kr": {
   "books_tried": [
@@ -7980,14 +7880,18 @@
   "url": "https://lib.yuseong.go.kr/web/program/searchResultList.do?vSrchText={t}"
  },
  "https://library.bsgangseo.go.kr/gmlib/": {
-  "bad_url": "https://library.busan.go.kr/gsmbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 3,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/gsmbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/gsmbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=BQ%2CAR%2CCB%2CKH%2CKJ&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://library.bsgangseo.go.kr/gslib/": {
   "checked": "2026-09-17",
@@ -8005,14 +7909,18 @@
   "url": "https://library.busan.go.kr/gsbooks/book/search/collectionOfMaterials?searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=AR%2CBQ%2CCB%2CKH%2CKJ&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://library.bsgangseo.go.kr/jslib/": {
-  "bad_url": "https://library.busan.go.kr/jsbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/jsbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/jsbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=CB%2CAR%2CBQ%2CKH%2CKJ&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://library.bsnamgu.go.kr": {
   "books_tried": [
@@ -9023,76 +8931,60 @@
   "url": "https://mplib.mapo.go.kr/sglib/PGM3007/plusSearchResultList.do?searchKey=ALL&searchLibraryArr=MA&searchKeyword={t}"
  },
  "https://mrlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://mrlib.gne.go.kr/book/search.es?mid=b70201000000",
-  "result_url": "https://mrlib.gne.go.kr/book/search.es?mid=b70201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://mrlib.gne.go.kr/book/search.es?mid=b70201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=MR000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://nhlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://nhlib.gne.go.kr/book/search.es?mid=c10501000000",
-  "result_url": "https://nhlib.gne.go.kr/book/search.es?mid=c10501000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://nhlib.gne.go.kr/book/search.es?mid=c10501000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=NH000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://njlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://njlib.gne.go.kr/book/search.es?mid=c40201000000",
-  "result_url": "https://njlib.gne.go.kr/book/search.es?mid=c40201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://njlib.gne.go.kr/book/search.es?mid=c40201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=NJ000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://nmlib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://nmlib.gne.go.kr/book/search.es?mid=b40101000000",
-  "result_url": "https://nmlib.gne.go.kr/book/search.es?mid=b40101000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://nmlib.gne.go.kr/book/search.es?mid=b40101000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=JIN00000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://nowonlib.kr/buram": {
   "checked": "2026-09-17",
@@ -9261,22 +9153,18 @@
   "ok": false
  },
  "https://sanlib.gne.go.kr/": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://sanlib.gne.go.kr/book/search.es?mid=c60201000000",
-  "result_url": "https://sanlib.gne.go.kr/book/search.es?mid=c60201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://sanlib.gne.go.kr/book/search.es?mid=c60201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=SAN00000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://sclib.cne.go.kr": {
   "checked": "2026-09-17",
@@ -9346,23 +9234,18 @@
   "url": "https://shlib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000904&manageCode=ME&searchCondition=ALL&searchTxt={q}"
  },
  "https://sjlib.gne.go.kr": {
-  "books_tried": [
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://sjlib.gne.go.kr/book/search.es?mid=d30201000000",
-  "result_url": "https://sjlib.gne.go.kr/book/search.es?mid=d30201000000",
+  "query": "title",
   "sample": [
    "9788993242706",
    "장수탕 선녀님 "
-  ]
+  ],
+  "url": "POST utf-8 https://sjlib.gne.go.kr/book/search.es?mid=d30201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=SJ000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://small.u-library.kr/": {
   "checked": "2026-09-17",
@@ -9430,22 +9313,18 @@
   "url": "https://talib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000110&manageCode=MU&searchCondition=ALL&searchTxt={q}"
  },
  "https://tylib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://tylib.gne.go.kr/book/search.es?mid=b20201000000",
-  "result_url": "https://tylib.gne.go.kr/book/search.es?mid=b20201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://tylib.gne.go.kr/book/search.es?mid=b20201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=TY000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://uclib.cne.go.kr": {
   "checked": "2026-09-17",
@@ -9819,24 +9698,32 @@
   "url": "https://www.donghaelib.go.kr/web/program/searchResultList.do?searchType=SIMPLE&searchCategory=ALL&searchClassNo1Aggs=ALL&searchField=ALL&searchLibrary=ALL&searchWord={t}"
  },
  "https://www.dongnae.go.kr/lib/allak/": {
-  "bad_url": "https://library.busan.go.kr/anrbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/anrbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/anrbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=BP&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://www.dongnae.go.kr/lib/dongnae/": {
-  "bad_url": "https://library.busan.go.kr/desbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/desbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/desbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=BK&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://www.eplib.or.kr/ealib": {
   "checked": "2026-09-17",
@@ -10179,14 +10066,18 @@
   "url": "https://www.gdlibrary.or.kr/hg/menu/201/book/search/collection?searchType=normal&tabSearch=false&form_code=&media_code=&doc_type=&sortField=score&sortOrder=desc&display=10&searchInput={t}&title=&author=&publisher=&isbn=&keyword=&pub_year_from=&pub_year_to=&lib_type=&manage_code=BR&smart_manage_code=&small_manage_code="
  },
  "https://www.geumjeong.go.kr/gslib": {
-  "bad_url": "https://library.busan.go.kr/ggsbooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/ggsbooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/ggsbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=KF&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://www.ghlib.go.kr": {
   "checked": "2026-09-17",
@@ -10683,34 +10574,32 @@
   "ok": false
  },
  "https://www.hanamlib.go.kr/dilib": {
-  "books_tried": [
-   "9788964960035",
-   "9788954674638",
-   "9788956187372"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/dilib/searchSimple.do?key=541"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/dilib/searchSimple.do?key=541",
+  "query": "title",
+  "sample": [
+   "9788964960035",
+   "나는 나의 주인 "
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=ME"
  },
  "https://www.hanamlib.go.kr/dulib/index.do": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/dulib/searchSimple.do?key=215"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/dulib/searchSimple.do?key=215",
+  "query": "title",
+  "sample": [
+   "9791195794799",
+   "설민석의 한국사 대모험"
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=MC"
  },
  "https://www.hanamlib.go.kr/iglib": {
   "books_tried": [
@@ -10739,64 +10628,60 @@
   "ok": false
  },
  "https://www.hanamlib.go.kr/nalib": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/nalib/searchSimple.do?key=64"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/nalib/searchSimple.do?key=64",
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=MB"
  },
  "https://www.hanamlib.go.kr/selib": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/selib/searchSimple.do?key=441"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/selib/searchSimple.do?key=441",
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=MD"
  },
  "https://www.hanamlib.go.kr/silib": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/silib/searchSimple.do?key=152"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/silib/searchSimple.do?key=152",
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=MA"
  },
  "https://www.hanamlib.go.kr/wilib": {
-  "books_tried": [
-   "9791164134267",
-   "9791195794799",
-   "9788993242706"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:no-hit",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
-  "page": "https://www.hanamlib.go.kr/wilib/searchSimple.do?key=851"
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
+  "page": "https://www.hanamlib.go.kr/wilib/searchSimple.do?key=851",
+  "query": "title",
+  "sample": [
+   "9788993242706",
+   "장수탕 선녀님 "
+  ],
+  "url": "POST utf-8 https://www.hanamlib.go.kr/kolaseek/search/plusSearchResultList.do searchType=SIMPLE&searchCategory=ALL&searchKey=TITLE&searchKeyword={t}&searchLibraryArr=MF"
  },
  "https://www.hmlib.or.kr/library/": {
   "checked": "2026-09-17",
@@ -11101,76 +10986,60 @@
   "ok": false
  },
  "https://www.incheonlib.go.kr/": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,no-title,no-title,no-title,",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.incheonlib.go.kr/itg/sch/bsch/list.do?mnidx=385",
-  "result_url": "https://www.incheonlib.go.kr/itg/sch/bsch/list.do?mnidx=385",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.incheonlib.go.kr/itg/sch/bsch/list.do?mnidx=385 searchKeyword={t}&searchLibMngCd=ALL"
  },
  "https://www.incheonlib.go.kr/cni/main.do": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.incheonlib.go.kr/cni/sch/bsch/list.do?mnidx=456",
-  "result_url": "https://www.incheonlib.go.kr/cni/sch/bsch/list.do?mnidx=456",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.incheonlib.go.kr/cni/sch/bsch/list.do?mnidx=456 searchKeyword={t}&searchLibMngCd=ALL"
  },
  "https://www.incheonlib.go.kr/cnl/main.do": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.incheonlib.go.kr/cnl/sch/bsch/list.do?mnidx=414",
-  "result_url": "https://www.incheonlib.go.kr/cnl/sch/bsch/list.do?mnidx=414",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.incheonlib.go.kr/cnl/sch/bsch/list.do?mnidx=414 searchKeyword={t}&searchLibMngCd=ALL"
  },
  "https://www.incheonlib.go.kr/maj/main.do": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.incheonlib.go.kr/maj/sch/bsch/list.do?mnidx=539",
-  "result_url": "https://www.incheonlib.go.kr/maj/sch/bsch/list.do?mnidx=539",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.incheonlib.go.kr/maj/sch/bsch/list.do?mnidx=539 searchKeyword={t}&searchLibMngCd=ALL"
  },
  "https://www.incheonlib.go.kr/sio/main.do": {
   "books_tried": [
@@ -11188,40 +11057,32 @@
   "page": "https://www.incheonlib.go.kr/sio/sch/ssch/list.do?mnidx=683"
  },
  "https://www.incheonlib.go.kr/yjs/main.do": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title,HTTPError",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.incheonlib.go.kr/yjs/sch/bsch/list.do?mnidx=497",
-  "result_url": "https://www.incheonlib.go.kr/yjs/sch/bsch/list.do?mnidx=497",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.incheonlib.go.kr/yjs/sch/bsch/list.do?mnidx=497 searchKeyword={t}&searchLibMngCd=ALL"
  },
  "https://www.issl.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "no-candidates",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597",
-  "result_url": "https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://www.issl.go.kr/sch/bsch/list.do?mnidx=1597 searchKeyword={t}"
  },
  "https://www.jecheon.go.kr/jclib/index.do": {
   "checked": "2026-09-17",
@@ -11924,14 +11785,18 @@
   ]
  },
  "https://www.sasang.go.kr/jrlib": {
-  "bad_url": "https://library.busan.go.kr/juryebooks/book/search/collectionOfMaterials?procMode=search&searchMode=normal&search_type=normal&pageno=1&display=10&search_txt={t}",
   "checked": "2026-09-23",
-  "how": "manual",
+  "how": "post",
   "libs": 1,
-  "note": "audit:no-hit",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://library.busan.go.kr/juryebooks/book/search/collectionOfMaterials",
-  "sample": null
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/juryebooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&orderby_item=&orderby=&display=10&manage_code=CF&search_shelf=&option=0&search_txt={t}&search_author=&search_publisher=&search_year_start=&search_year_end=&search_keyword=&subject_code=&search_isbn_issn="
  },
  "https://www.sblib.seoul.kr/": {
   "checked": "2026-09-17",
@@ -13207,22 +13072,18 @@
   "url": "https://yslib.cne.go.kr/api/srch/bookSearch.do?menuId=MNU_0000000000000600&manageCode=MT&searchCondition=ALL&searchTxt={q}"
  },
  "https://yslib.gne.go.kr": {
-  "books_tried": [
-   "9791164134267"
-  ],
   "checked": "2026-09-23",
-  "held": true,
-  "how": "browser",
+  "how": "post",
   "libs": 1,
-  "note": "browse:query-not-in-url",
-  "note_http": "tried no-title,no-title,no-title",
-  "ok": false,
+  "note": "폼 제출(POST) — github.io 출처에서 재제출·음성 검사 통과",
+  "ok": true,
   "page": "https://yslib.gne.go.kr/book/search.es?mid=b10201000000",
-  "result_url": "https://yslib.gne.go.kr/book/search.es?mid=b10201000000",
+  "query": "title",
   "sample": [
    "9791164134267",
    "흔한남매"
-  ]
+  ],
+  "url": "POST utf-8 https://yslib.gne.go.kr/book/search.es?mid=b10201000000 category=book&curPageNum=1&pageSize=10&type=album&searchKind=YS000000&cmd=L_ALL&detailYn=N&cmdSel=L_ALL&searchKeyword={t}&searchType1=TITLE&searchKeyword1=&searchType2=AUTHOR&searchKeyword2=&searchType3=PUBLISHER&searchKeyword3="
  },
  "https://yslib.yeosu.go.kr": {
   "books_tried": [

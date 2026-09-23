@@ -93,10 +93,26 @@ const topics: string[] = (meta as any).topics ?? [];
     // 도서관별 링크: search 템플릿({q}=ISBN, {t}=제목) → 검색 결과, 자리표시자 없는 검색 페이지 → 제목 복사 후 열기, 없으면 홈페이지
     function libLink(l, b) {
       const s = l.search || '';
+      if (s.startsWith('POST ')) {
+        // "POST <인코딩> <action> <k=v&k={t}…>" — 검색어를 URL 로 받지 않는 도서관: 누르면 폼을 만들어 새 탭으로 제출
+        const [, enc, action] = s.split(' ');
+        return { href: action, direct: true, post: s };
+      }
       if (s.includes('{q}') || s.includes('{t}')) {
         return { href: s.replace('{q}', encodeURIComponent(b.isbn13)).replace('{t}', encodeURIComponent(String(b.title || '').replace(/\s*[:(\[].*$/, '').trim())), direct: true };
       }
       return { href: s || l.home || '', direct: false };
+    }
+    function submitPost(tpl, b) {
+      const [, enc, action, qs] = tpl.split(' ');
+      const t = String(b.title || '').replace(/\s*[:(\[].*$/, '').trim();
+      const f = document.createElement('form');
+      f.method = 'POST'; f.action = action; f.target = '_blank'; f.acceptCharset = enc || 'utf-8'; f.style.display = 'none';
+      for (const [k, v] of new URLSearchParams(qs || '')) {
+        const i = document.createElement('input'); i.type = 'hidden'; i.name = k;
+        i.value = v.replace('{t}', t).replace('{q}', b.isbn13); f.appendChild(i);
+      }
+      document.body.appendChild(f); f.submit(); f.remove();
     }
     function copyTitle(title) {
       const t = String(title || '').replace(/\s*[:(\[].*$/, '').trim();
@@ -117,8 +133,9 @@ const topics: string[] = (meta as any).topics ?? [];
         const byRegion = {}; sorted.forEach((l) => { (byRegion[l.region] ??= []).push(l); });
         document.getElementById('holdList').innerHTML = Object.entries(byRegion).map(([r, ls]) => `
           <div style="margin:6px 0"><b>${esc(regionNames[r] || r)}</b> <span class="sub" style="margin:0">${ls.length}곳</span>
-          <div class="badges">${ls.map((l) => { const k = libLink(l, b); return `<a class="badge${mine && mine.code === l.code ? ' band' : ''}" href="${k.href ? esc(k.href) : '#'}" ${k.href ? 'target="_blank" rel="noopener"' : ''} data-copy="${k.direct || !k.href ? '' : '1'}" title="${esc(l.addr)}${l.hours ? ' · ' + esc(l.hours) : ''}${k.direct ? ' · 이 책 검색 결과로 이동' : k.href ? ' · 제목을 복사하고 도서관 페이지를 엽니다' : ''}">${esc(l.name)}${k.direct ? ' <span style="opacity:.6">↗</span>' : ''}${withDist && l.d != null ? ` · ${l.d.toFixed(1)}km` : ''}</a>`; }).join('')}</div></div>`).join('');
+          <div class="badges">${ls.map((l) => { const k = libLink(l, b); return `<a class="badge${mine && mine.code === l.code ? ' band' : ''}" href="${k.href ? esc(k.href) : '#'}" ${k.href ? 'target="_blank" rel="noopener"' : ''} data-copy="${k.direct || !k.href ? '' : '1'}" ${k.post ? `data-post="${esc(k.post)}"` : ''} title="${esc(l.addr)}${l.hours ? ' · ' + esc(l.hours) : ''}${k.direct ? ' · 이 책 검색 결과로 이동' : k.href ? ' · 제목을 복사하고 도서관 페이지를 엽니다' : ''}">${esc(l.name)}${k.direct ? ' <span style="opacity:.6">↗</span>' : ''}${withDist && l.d != null ? ` · ${l.d.toFixed(1)}km` : ''}</a>`; }).join('')}</div></div>`).join('');
         document.querySelectorAll('#holdList a[data-copy="1"]').forEach((a) => a.addEventListener('click', () => copyTitle(b.title)));
+        document.querySelectorAll('#holdList a[data-post]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); submitPost(a.dataset.post, b); }));
       };
       draw(libs, false);
       document.getElementById('holdNear')?.addEventListener('click', () => {
