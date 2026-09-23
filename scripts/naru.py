@@ -57,7 +57,7 @@ def call(endpoint: str, *, cache: bool = True, retries: int = 8, **params) -> di
             with urllib.request.urlopen(url, timeout=120) as r:
                 data = json.loads(r.read().decode("utf-8"))
             break
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError) as e:   # URLError·TimeoutError·ConnectionResetError 모두 OSError
             last_err = e
             time.sleep(min(120, 5 * 2 ** attempt))   # 5,10,20,40,80,120,120s — 504 게이트웨이 타임아웃 대비
     else:
