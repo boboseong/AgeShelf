@@ -236,14 +236,15 @@ def export_holdings(src: Path, keep: set[str] | None = None) -> dict:
     ls_p = ROOT / "data" / "lib_search.json"
     ls = json.load(open(ls_p, encoding="utf-8")) if ls_p.exists() else {}
 
-    def search_of(home: str) -> str:
-        r = ls.get(home.strip()) or {}
+    def search_of(home: str, code: str = "") -> str:
+        # 도서관 코드 단위 지정("lib:<코드>")이 홈페이지 단위보다 우선(한 홈페이지를 여러 도서관이 공유하거나 옛 주소가 죽은 경우)
+        r = ls.get(f"lib:{code}") or ls.get(home.strip()) or {}
         return r.get("url") or "" if r.get("ok") else (r.get("page") or "")
     rows = []
     for x in libs.itertuples():
         rows.append([str(x.libCode), s_(x.libName), s_(x.address), None if pd.isna(x.latitude) else round(float(x.latitude), 5),
                      None if pd.isna(x.longitude) else round(float(x.longitude), 5), str(x.region), s_(x.homepage),
-                     s_(x.operatingTime), s_(x.closed), int(len(by_lib.get(str(x.libCode), []))), search_of(s_(x.homepage))])
+                     s_(x.operatingTime), s_(x.closed), int(len(by_lib.get(str(x.libCode), []))), search_of(s_(x.homepage), str(x.libCode))])
     n_search = sum(1 for r in rows if r[10] and ("{q}" in r[10] or "{t}" in r[10]))   # POST 템플릿("POST enc action k={t}")도 포함
     n_page = sum(1 for r in rows if r[10]) - n_search
     print(f"검색 링크: 결과로 바로 {n_search:,}곳, 검색 페이지만 {n_page:,}곳, 없음 {len(rows)-n_search-n_page:,}곳")

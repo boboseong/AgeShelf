@@ -13099,5 +13099,260 @@
   "note_http": "tried no-title,no-title,no-title",
   "ok": false,
   "page": "https://yslib.yeosu.go.kr/front/index.php?g_page=service&m_page=service01"
+ },
+ "lib:121014": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산 통합검색 허브 영도",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/ydbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code=AM&option=0&search_txt={t}"
+ },
+ "lib:121018": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산 통합검색 허브 금정(옛 홈페이지는 구청 첫 화면으로 넘어감)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/gjbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code=AP&option=0&search_txt={t}"
+ },
+ "lib:121023": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "북구 소장자료검색 만덕",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://www.bsbukgu.go.kr/hmlib/index.bsbukgu?menuCd=DOM_000001203001000000&mode=result search_category=search_title&libraryPath=mdlib&search_txt={t}"
+ },
+ "lib:121025": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산 통합검색 허브 사상(홈페이지 링크의 구청 통합검색은 오탐)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/ssbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code=AW&option=0&search_txt={t}"
+ },
+ "lib:121026": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 기장",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=gijang&search_txt={t}&display=10"
+ },
+ "lib:126015": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산 통합검색 허브 영도 남항분관",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.busan.go.kr/ydbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code=BB&option=0&search_txt={t}"
+ },
+ "lib:126023": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "사하구 도서검색 다대",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.saha.go.kr/hadanlib/booksearch/list.do?mId=0301000000&page=1&searchType=search_title&book_type=BOOK&display=10&manage_code=BC&searchTxt={t}"
+ },
+ "lib:126025": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "북구 소장자료검색 화명(GET 은 한글 깨짐)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://www.bsbukgu.go.kr/hmlib/index.bsbukgu?menuCd=DOM_000001203001000000&mode=result search_category=search_title&libraryPath=hmlib&search_txt={t}"
+ },
+ "lib:126032": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장디지털도서관: 옛 주소 busanlib.net 폐쇄, dlib.gijang.go.kr 자체 검색은 결과가 비고 부산 통합검색·기장군 통합검색에도 없음",
+  "ok": false,
+  "page": "https://dlib.gijang.go.kr/dlib/book/search.do?mId=0201010000"
+ },
+ "lib:126134": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 정관에듀파크어린이",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=jgchildlib&search_txt={t}&display=10"
+ },
+ "lib:126144": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 정관",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=jglib&search_txt={t}&display=10"
+ },
+ "lib:126147": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산진구통합도서관 어린이청소년",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.busanjin.go.kr/library/index.busanjin?menuCd=DOM_000002103001000000&booktype=BOOK&pageno=1&manage_code=BL&search_title={t}"
+ },
+ "lib:126151": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 대라다목적(옛 주소 busanlib.net 폐쇄)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=daera&search_txt={t}&display=10"
+ },
+ "lib:126152": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "북구 소장자료검색 금곡",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://www.bsbukgu.go.kr/hmlib/index.bsbukgu?menuCd=DOM_000001203001000000&mode=result search_category=search_title&libraryPath=bglib&search_txt={t}"
+ },
+ "lib:126159": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 고촌어울림",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=gochon&search_txt={t}&display=10"
+ },
+ "lib:126160": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 내리새라",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=naeri&search_txt={t}&display=10"
+ },
+ "lib:126165": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "기장군 통합검색 교리",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=gyori&search_txt={t}&display=10"
+ },
+ "lib:126168": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "사하구 도서검색 하단",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.saha.go.kr/hadanlib/booksearch/list.do?mId=0301000000&page=1&searchType=search_title&book_type=BOOK&display=10&manage_code=CE&searchTxt={t}"
+ },
+ "lib:126169": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산진구통합도서관 기적의",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.busanjin.go.kr/library/index.busanjin?menuCd=DOM_000002103001000000&booktype=BOOK&pageno=1&manage_code=CD&search_title={t}"
+ },
+ "lib:126175": {
+  "checked": "2026-09-23",
+  "how": "manual",
+  "libs": 1,
+  "note": "부산진구통합도서관 당감",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.busanjin.go.kr/library/index.busanjin?menuCd=DOM_000002103001000000&booktype=BOOK&pageno=1&manage_code=CH&search_title={t}"
  }
 }
