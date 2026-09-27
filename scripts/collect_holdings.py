@@ -32,7 +32,7 @@ PROC = ROOT / "data" / "processed"
 REGIONS = {"11": "서울", "21": "부산", "22": "대구", "23": "인천", "24": "광주", "25": "대전", "26": "울산", "29": "세종",
            "31": "경기", "32": "강원", "33": "충북", "34": "충남", "35": "전북", "36": "전남", "37": "경북", "38": "경남", "39": "제주"}
 LIB_FIELDS = ["libCode", "libName", "address", "tel", "latitude", "longitude", "homepage", "closed", "operatingTime", "BookCount"]
-SAVE_EVERY = 2000            # 중간 저장 간격(호출 수)
+SAVE_EVERY = 1000            # 중간 저장 간격(호출 수)
 
 
 def fetch_directory() -> pd.DataFrame:
@@ -70,15 +70,18 @@ def target_isbns(kind: str) -> list[str]:
     return list(s.index)
 
 
-def fetch_holdings(isbns: list[str], regions: list[str], workers: int) -> pd.DataFrame:
+def fetch_holdings(isbns: list[str], regions: list[str], workers: int, book_major: bool = False) -> pd.DataFrame:
     out_p = PROC / "holdings.parquet"
     old = pd.read_parquet(out_p) if out_p.exists() else pd.DataFrame(columns=["isbn13", "region", "libCode"])
     done = set(zip(old.isbn13, old.region)) if len(old) else set()
-    jobs = [(i, r) for r in regions for i in isbns if (i, r) not in done]
+    if book_major:   # 책 우선순위대로 모든 지역을 채움(인기 도서부터 전국이 먼저 완성)
+        jobs = [(i, r) for i in isbns for r in regions if (i, r) not in done]
+    else:            # 지역을 하나씩 끝까지
+        jobs = [(i, r) for r in regions for i in isbns if (i, r) not in done]
     print(f"대상 {len(isbns):,}권 × 지역 {regions} → 남은 호출 {len(jobs):,}회 (동시 {workers})", flush=True)
     rows: list[dict] = []
     lock = threading.Lock()
-    state = {"n": 0, "err": 0, "t0": time.time()}
+    state = {"n": 0, "err": 0, "t0": time.time(), "stop": False}
 
     def save():
         new = pd.DataFrame(rows, columns=["isbn13", "region", "libCode"])
@@ -87,11 +90,17 @@ def fetch_holdings(isbns: list[str], regions: list[str], workers: int) -> pd.Dat
         return allh
 
     def work(job):
+        if state["stop"]:                 # 일일 한도에 걸리면 남은 작업은 호출하지 않고 넘김(다음 회차에 이어받음)
+            return
         isbn, region = job
         try:
             r = naru.call("libSrchByBook", cache=False, isbn=isbn, region=region, pageNo=1, pageSize=2000)
         except Exception as e:   # NaruError 외에 연결 끊김(ConnectionReset) 등도 한 건 오류로 넘기고 계속
             with lock:
+                if "outOfMaxlimit" in str(e) and not state["stop"]:
+                    state["stop"] = True
+                    print(f"  일일 호출 한도 도달 → 이번 회차 중단 ({state['n']:,}회 완료)", flush=True)
+                    return
                 state["err"] += 1
                 if state["err"] <= 5:
                     print(f"  ! {isbn} {region}: {e}", flush=True)
@@ -115,7 +124,7 @@ def fetch_holdings(isbns: list[str], regions: list[str], workers: int) -> pd.Dat
     allh = save()
     have = allh[allh.libCode != ""]
     print(f"소장 정보: {len(have):,}쌍, 책 {have.isbn13.nunique():,}권, 도서관 {have.libCode.nunique():,}곳 → holdings.parquet "
-          f"(이번 {state['n']:,}회, 오류 {state['err']})")
+          f"(이번 {state['n']:,}회, 오류 {state['err']}{', 한도로 중단' if state['stop'] else ''})")
     return allh
 
 
@@ -126,6 +135,7 @@ def main():
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0, help="대상 책 수 상한(우선순위 상위 N권)")
     ap.add_argument("--skip-directory", action="store_true")
+    ap.add_argument("--book-major", action="store_true", help="책 우선순위(추천도 높은 순)대로 모든 지역을 채움")
     args = ap.parse_args()
     regions = list(REGIONS) if args.regions == "all" else [r.strip() for r in args.regions.split(",")]
     if not args.skip_directory or not (PROC / "libs.parquet").exists():
@@ -135,7 +145,7 @@ def main():
     if args.limit:
         isbns = isbns[:args.limit]
     print(f"[소장 정보] books={args.books}")
-    fetch_holdings(isbns, regions, args.workers)
+    fetch_holdings(isbns, regions, args.workers, args.book_major)
 
 
 if __name__ == "__main__":
