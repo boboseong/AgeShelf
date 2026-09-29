@@ -17,7 +17,7 @@
       pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17], prof: r[18], elig: r[19], tpb: r[20] || 0 };
   };
   window.AgeShelfCard = function (b, opts) {
-    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [] } = opts;
+    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit' } = opts;
     const prof = window.AgeShelfProf(b.prof);
     const max = Math.max(...prof, 1);
     const bars = profAges.map((a, k) => `<i class="${a === age ? 'on' : ''}" style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
@@ -32,7 +32,9 @@
     fl.slice(0, 2).forEach((c) => { if (flagTags[c]) chips.push(`<span class="badge tag flag" data-f="flag" data-v="${c}">${esc(flagTags[c])}</span>`); });
     return `<a class="card" href="${base}/b/?isbn=${esc(b.i)}">
       <div>${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
-      <div><div class="rank">#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})</div>
+      <div><div class="rank">${sortBy === 'cent'   // 연령 적합도순: 정렬 기준인 적합도를 앞에 굵게
+        ? `#${rank} · 연령 적합도 <b>${pct}%</b> (${centLabel(pct)}) · 추천도 ${Number(b.fit).toFixed(1)} · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건`
+        : `#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})`}</div>
       <div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>
       <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.med).toFixed(1)}세</span>${b.sp >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.sh && b.sh !== '대칭' ? `<span class="badge">${esc(b.sh)}</span>` : ''}${b.pic ? '<span class="badge pic">그림책</span>' : ''}${chips.join('')}</div>
       <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;
