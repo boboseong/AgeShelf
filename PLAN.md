@@ -417,10 +417,11 @@ cd site && npm run build                           # 5. 정적 사이트 빌드 
 - 사용자 쪽에서 가능한 것(미실행): ① 국립중앙도서관(libdata@korea.kr, 02-595-6131)에 일일 한도 상향 문의, ② 정보나루 '장서/대출데이터' 월별 TEXT 파일(도서관별, 1,661곳, 2026-09-01 제공) 일괄 내려받기 — API 한도와 무관하지만 완전성·판 기준 차이를 먼저 한 도서관으로 검증해야 함.
 
 ### 9-3. 일일 점검 (매일 오전 9시, 전날 밤 회차가 끝난 뒤)
+- 09-28·09-29 점검: 매일 29,999회(한도)씩 정상. 09-29 오후 대기 스크립트가 앱 재시작과 함께 종료된 것을 발견 → WMI 로 다시 띄움(손실 없음).
 `python scripts/holdings_status.py`
 | 볼 것 | 정상 | 이상 시 |
 |---|---|---|
-| 대기 스크립트 | 1개 이상 | 0이면 `"C:\Program Files\Git\bin\bash.exe" scripts/resume_nationwide.sh` 로 다시 띄움(먼저 수집기 중복 없는지 확인) |
+| 대기 스크립트 | 1개 이상 | 0이면 PowerShell 에서 `Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='"C:\Program Files\Git\bin\bash.exe" scripts/resume_nationwide.sh'; CurrentDirectory='<작업 폴더>'}` 로 다시 띄움(먼저 수집기 중복 없는지 확인). `Start-Process` 로 띄우면 Claude 앱이 다시 시작될 때 함께 종료됨(09-29 실제 발생) |
 | 전날 처리량(진행 증가) | 약 3만 회 | 크게 적으면 로그의 오류·한도 도달 시각 확인(다른 작업이 한도를 썼는지) |
 | 오류 | 0~수십 | 수백 이상이면 오류 표본 확인, 네트워크·API 장애면 재시도에 맡김 |
 | 인기 상위 N권 전국 완성 | 위 일정표 ±1일 | 2일 이상 늦으면 일정 재계산 |
