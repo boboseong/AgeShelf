@@ -61,12 +61,13 @@ const pool = Object.values(books as Record<string, any>).map((b) => ({
         const max = Math.max(...b.prof);
         const bars = profAges.map((a, k) => `<i class="${(a === a1 || a === a2) ? 'on ' : ''}${b.obs[k] ? '' : 'miss'}" style="height:${Math.max(6, Math.round(100 * b.prof[k] / max))}%" title="${a}세 ${(100*b.prof[k]).toFixed(0)}%"></i>`).join('');
         const axis = profAges.map((a) => `<span>${a}</span>`).join('');
-        return `<a class="card" href="${base}/b/?isbn=${b.isbn13}">
-          <div>${b.cover ? `<img class="cover" src="${b.cover}" alt="" loading="lazy">` : '<div class="cover"></div>'}</div>
-          <div><div class="rank">#${i + 1} · 추천도 <b>${fit.toFixed(1)}</b> · 보간 대출 ${l.toLocaleString()}건 · 적합도 ${Math.floor(cent * 100)}%</div>
+        const href = `${base}/b/?isbn=${b.isbn13}`;
+        return `<div class="card">
+          <div><a href="${href}">${b.cover ? `<img class="cover" src="${b.cover}" alt="" loading="lazy">` : '<div class="cover"></div>'}</a>${window.AgeShelfActs(b.isbn13, b.title)}</div>
+          <a href="${href}"><div class="rank">#${i + 1} · 추천도 <b>${fit.toFixed(1)}</b> · 보간 대출 ${l.toLocaleString()}건 · 적합도 ${Math.floor(cent * 100)}%</div>
           <div class="title">${esc(b.title)}</div><div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)}</div>
           <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.median).toFixed(1)}세</span>${spec >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.shape && b.shape !== '대칭' ? `<span class="badge">${esc(b.shape)}</span>` : ''}${b.picture ? '<span class="badge pic">그림책</span>' : ''}</div>
-          <div class="bars">${bars}</div><div class="axis">${axis}</div></div></a>`;
+          <div class="bars">${bars}</div><div class="axis">${axis}</div></a></div>`;
       }).join('');
     }
     $('#months').addEventListener('input', render);

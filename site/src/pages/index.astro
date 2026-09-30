@@ -96,7 +96,8 @@ const exMax = ex ? Math.max(...ex.prof) : 1;
     <ul class="features">
       <li><b>필터</b> 주제 {nTopics}가지(동물·탈것·잠자리·감정…), 분야, 그림책·전집·단행본 같은 형태, 요즘 인기·10년 스테디셀러 같은 성격, 출판사로 좁혀 봅니다.</li>
       {holdings.n_libs > 0 && <li><b>우리 동네 도서관</b> 도서관 {Number(holdings.n_libs).toLocaleString()}곳의 소장 정보로 "이 도서관에 있는 책만" 볼 수 있고, 내 주변 도서관도 찾아 줍니다.
-        {fullNames}은 거의 모든 책{partRegions.length > 0 && `, 그 밖의 ${partRegions.length}개 시도는 추천 상위 ${partN.toLocaleString()}권`}의 소장 정보가 있습니다.</li>}
+        {fullNames}은 거의 모든 책{partRegions.length > 0 && `, 그 밖의 ${partRegions.length}개 시도는 추천 상위 ${partN.toLocaleString()}권`}의 소장 정보가 있습니다.
+        도서관을 고르면 책 표지 아래 <b>도서관</b> 버튼으로 그 도서관 홈페이지의 검색 결과를 바로 열 수 있습니다. <b>알라딘</b> 버튼은 책소개·미리보기가 있는 알라딘 상품 페이지로 이어집니다.</li>}
       <li><b>개월 수로 찾기</b> 30개월처럼 개월 수를 넣으면 인접한 두 나이의 점수를 비율대로 섞어 다시 매깁니다.</li>
       <li><b>검색·책 상세</b> 제목·저자로 찾고, 책마다 나이별 대출 분포와 키워드, 소장 도서관을 확인합니다. 도서관 이름을 누르면 그 도서관 홈페이지에서 이 책을 검색한 결과(자료실·청구기호·대출 가능 여부)로 이어집니다.</li>
     </ul>

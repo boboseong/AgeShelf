@@ -7,11 +7,16 @@ const profAges: number[] = meta.profile_ages;
 const labels: Record<string, string> = (meta as any).labels ?? {};
 const max = Math.max(...b.prof);
 const centPct = Math.floor((b.cent ?? 0) * 100);
+const href = `${base}/b/?isbn=${b.isbn13}`;
+// 표지 아래 버튼은 card.js 의 AgeShelfActs 와 같은 마크업. 도서관 선택 여부는 브라우저에서 AgeShelfSyncActs 가 다시 칠한다
 const centLabel = centPct >= 80 ? '딱 맞음' : centPct >= 50 ? '잘 맞음' : centPct >= 30 ? '가장자리' : '다른 나이 책';
 ---
-<a class="card" href={`${base}/b/?isbn=${b.isbn13}`} data-isbn={b.isbn13}>
-  <div>{b.cover ? <img class="cover" src={b.cover} alt="" loading="lazy" /> : <div class="cover"></div>}</div>
+<div class="card" data-isbn={b.isbn13}>
   <div>
+    <a href={href}>{b.cover ? <img class="cover" src={b.cover} alt="" loading="lazy" /> : <div class="cover"></div>}</a>
+    <div class="acts"><button type="button" class="act" data-act="lib" data-isbn={b.isbn13} data-title={b.title} aria-disabled="true" title="나이별 목록의 필터에서 도서관을 고르면 켜집니다">도서관</button><a class="act" href={`https://www.aladin.co.kr/shop/wproduct.aspx?ISBN=${b.isbn13}`} target="_blank" rel="noopener" title="알라딘에서 책 정보 보기">알라딘 ↗</a></div>
+  </div>
+  <a href={href}>
     <div class="rank"><span class="rk">#{rank}</span> · 추천도 <b>{Number(b.fit ?? 0).toFixed(1)}</b> · {labels[String(age)] ?? `${age}세`} 대출 {b.loan_count.toLocaleString()}건 · 연령 적합도 {centPct}% ({centLabel})</div>
     <div class="title">{b.title}</div>
     <div class="meta">{b.authors} · {b.publisher} · {b.year}</div>
@@ -28,5 +33,5 @@ const centLabel = centPct >= 80 ? '딱 맞음' : centPct >= 50 ? '잘 맞음' : 
     </div>
     <div class="bars">{profAges.map((a, i) => <i class={(a === age ? 'on ' : '') + (b.obs[i] ? '' : 'miss')} style={`height:${Math.max(6, Math.round(100 * b.prof[i] / max))}%`} title={`${a}세 ${(100 * b.prof[i]).toFixed(0)}%`}></i>)}</div>
     <div class="axis">{profAges.map((a) => <span>{a}</span>)}</div>
-  </div>
-</a>
+  </a>
+</div>

@@ -41,6 +41,8 @@ const topics: string[] = (meta as any).topics ?? [];
       const max = kw[0][1] || 1;
       return head + `<div class="kwcloud">${kw.map(([w, g]) => `<a class="${g >= max * 0.3 ? 'big' : ''}" href="${base}/search?q=${encodeURIComponent(w)}" style="color:inherit;text-decoration:none" title="가중치 ${g}">${esc(w)}</a>`).join('')}</div>`;
     }
+    // 선택한 도서관이 이 책을 가졌나 (없으면 상세의 도서관 버튼은 비활성). 도서관을 안 골랐으면 undefined
+    function heldBy(b) { const lib = window.AgeShelfLib.get(); return lib ? (b.libs || []).includes(lib.code) : undefined; }
     function render(b) {
       document.title = `${b.title} · AgeShelf`;
       const max = Math.max(...b.prof, 1e-9);
@@ -62,7 +64,8 @@ const topics: string[] = (meta as any).topics ?? [];
       ].join('');
       root.innerHTML = `
       <div class="card detail">
-        <div>${b.cover ? `<img class="cover" style="width:120px;height:165px" src="${esc(b.cover)}" alt="">` : '<div class="cover" style="width:120px;height:165px"></div>'}</div>
+        <div>${b.cover ? `<img class="cover" style="width:120px;height:165px" src="${esc(b.cover)}" alt="">` : '<div class="cover" style="width:120px;height:165px"></div>'}
+          ${window.AgeShelfActs(b.isbn13, b.title, heldBy(b))}</div>
         <div>
           <h2>${esc(b.title)}</h2>
           <div class="meta">${esc(b.authors)} · ${esc(b.publisher)} · ${esc(b.year)} · ISBN ${esc(b.isbn13)}</div>
@@ -90,38 +93,6 @@ const topics: string[] = (meta as any).topics ?? [];
       </section>`;
       renderHoldings(b.libs || [], b);
     }
-    // 도서관별 링크: search 템플릿({q}=ISBN, {t}=제목) → 검색 결과, 자리표시자 없는 검색 페이지 → 제목 복사 후 열기, 없으면 홈페이지
-    function libLink(l, b) {
-      const s = l.search || '';
-      if (s.startsWith('POST ')) {
-        // "POST <인코딩> <action> <k=v&k={t}…>" — 검색어를 URL 로 받지 않는 도서관: 누르면 폼을 만들어 새 탭으로 제출
-        const [, enc, action] = s.split(' ');
-        return { href: action, direct: true, post: s };
-      }
-      if (s.includes('{q}') || s.includes('{t}')) {
-        return { href: s.replace('{q}', encodeURIComponent(b.isbn13)).replace('{t}', encodeURIComponent(String(b.title || '').replace(/\s*[:(\[].*$/, '').trim())), direct: true };
-      }
-      return { href: s || l.home || '', direct: false };
-    }
-    function submitPost(tpl, b) {
-      const [, enc, action, qs] = tpl.split(' ');
-      const t = String(b.title || '').replace(/\s*[:(\[].*$/, '').trim();
-      const f = document.createElement('form');
-      f.method = 'POST'; f.action = action; f.target = '_blank'; f.acceptCharset = enc || 'utf-8'; f.style.display = 'none';
-      for (const [k, v] of new URLSearchParams(qs || '')) {
-        const i = document.createElement('input'); i.type = 'hidden'; i.name = k;
-        i.value = v.replace('{t}', t).replace('{q}', b.isbn13); f.appendChild(i);
-      }
-      document.body.appendChild(f); f.submit(); f.remove();
-    }
-    function copyTitle(title) {
-      const t = String(title || '').replace(/\s*[:(\[].*$/, '').trim();
-      try { navigator.clipboard?.writeText(t)?.catch(() => {}); } catch (e) { /* 무시 */ }
-      let el = document.getElementById('copyToast');
-      if (!el) { el = document.createElement('div'); el.id = 'copyToast'; el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;z-index:99;opacity:.95'; document.body.appendChild(el); }
-      el.textContent = `“${t}” 를 복사했습니다. 도서관 검색창에 붙여 넣으세요.`; el.hidden = false;
-      clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 3500);
-    }
     async function renderHoldings(codes, b) {
       if (!codes.length || !window.AgeShelfLib) return;
       const dir = await window.AgeShelfLib.directory(base); const set = new Set(codes);
@@ -133,9 +104,9 @@ const topics: string[] = (meta as any).topics ?? [];
         const byRegion = {}; sorted.forEach((l) => { (byRegion[l.region] ??= []).push(l); });
         document.getElementById('holdList').innerHTML = Object.entries(byRegion).map(([r, ls]) => `
           <div style="margin:6px 0"><b>${esc(regionNames[r] || r)}</b> <span class="sub" style="margin:0">${ls.length}곳</span>
-          <div class="badges">${ls.map((l) => { const k = libLink(l, b); return `<a class="badge${mine && mine.code === l.code ? ' band' : ''}" href="${k.href ? esc(k.href) : '#'}" ${k.href ? 'target="_blank" rel="noopener"' : ''} data-copy="${k.direct || !k.href ? '' : '1'}" ${k.post ? `data-post="${esc(k.post)}"` : ''} title="${esc(l.addr)}${l.hours ? ' · ' + esc(l.hours) : ''}${k.direct ? ' · 이 책 검색 결과로 이동' : k.href ? ' · 제목을 복사하고 도서관 페이지를 엽니다' : ''}">${esc(l.name)}${k.direct ? ' <span style="opacity:.6">↗</span>' : ''}${withDist && l.d != null ? ` · ${l.d.toFixed(1)}km` : ''}</a>`; }).join('')}</div></div>`).join('');
-        document.querySelectorAll('#holdList a[data-copy="1"]').forEach((a) => a.addEventListener('click', () => copyTitle(b.title)));
-        document.querySelectorAll('#holdList a[data-post]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); submitPost(a.dataset.post, b); }));
+          <div class="badges">${ls.map((l) => { const k = window.AgeShelfLib.link(l, b.isbn13, b.title); return `<a class="badge${mine && mine.code === l.code ? ' band' : ''}" href="${k.href ? esc(k.href) : '#'}" ${k.href ? 'target="_blank" rel="noopener"' : ''} data-copy="${k.direct || !k.href ? '' : '1'}" ${k.post ? `data-post="${esc(k.post)}"` : ''} title="${esc(l.addr)}${l.hours ? ' · ' + esc(l.hours) : ''}${k.direct ? ' · 이 책 검색 결과로 이동' : k.href ? ' · 제목을 복사하고 도서관 페이지를 엽니다' : ''}">${esc(l.name)}${k.direct ? ' <span style="opacity:.6">↗</span>' : ''}${withDist && l.d != null ? ` · ${l.d.toFixed(1)}km` : ''}</a>`; }).join('')}</div></div>`).join('');
+        document.querySelectorAll('#holdList a[data-copy="1"]').forEach((a) => a.addEventListener('click', () => window.AgeShelfLib.copyTitle(b.title)));
+        document.querySelectorAll('#holdList a[data-post]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); window.AgeShelfLib.submitPost(a.dataset.post, b.isbn13, b.title); }));
       };
       draw(libs, false);
       document.getElementById('holdNear')?.addEventListener('click', () => {
