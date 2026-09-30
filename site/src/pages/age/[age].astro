@@ -32,8 +32,9 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
   <h2>{label}</h2>
   {age === 1 && <div class="notice">0세 카드 대출은 생년이 없는 학급·기관 단체대출이 대부분이라 순위에서 제외했습니다. 이 페이지는 1세(12~23개월) 카드 대출을 기준으로 하며, 상위권은 대부분 0세부터 보는 아기 그림책입니다.</div>}
   <p class="sub">
-    <b>딱 맞는 책</b>은 {label}에 대한 <b>연령 적합도</b>(이 책 독자 분포에서 {label}가 중앙에 얼마나 가까운지, 0~100%)가 {centMinPct}% 이상이고 대출 {minLoans}건 이상인 책만 골라 <b>추천도</b>(100점 = 적합도 점수 {wCent} + 인기 점수 {wPop}, 인기는 {label} 대출수를 로그로 그 나이 최대 대비 환산) 순으로 정렬한 목록입니다.
-    적합도는 이미 지난 어린 책에는 엄격하게, 앞으로 볼 큰 책에는 너그럽게 매깁니다.
+    <b>추천 도서</b>는 {label}에 대한 <b>연령 적합도</b>(이 책 독자 분포에서 {label}가 중앙에 얼마나 가까운지, 0~100%)가 {centMinPct}% 이상이고 대출 {minLoans}건 이상인 책을 <b>추천도</b>(100점 = 적합도 점수 {wCent} + 인기 점수 {wPop}, 인기는 {label} 대출수를 로그로 그 나이 최대 대비 환산) 중심으로 보여 줍니다.
+    볼 때마다 새 책을 만나도록 추천도 순위가 가까운 책끼리 자리를 조금씩 바꿔 섞습니다.
+    <b>연령 적합도순</b>은 같은 후보를 연령 적합도가 높은 순서대로(적합도가 같으면 추천도순) 정렬합니다. 적합도는 이미 지난 어린 책에는 엄격하게, 앞으로 볼 큰 책에는 너그럽게 매깁니다.
     <b>많이 빌린 책</b>은 {label} 대출 건수순입니다. 후보 {nEligible.toLocaleString()}권 전체를 아래로 내려가며 볼 수 있습니다.
   </p>
 
@@ -69,12 +70,13 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
   </details>
 
   <div class="tabs">
-    <button class="on" data-tab="fit">{label}에 딱 맞는 책</button>
-    <button data-tab="popular">{label}가 많이 빌린 책</button>
+    <button class="on" data-tab="fit">추천 도서</button>
+    <button data-tab="cent">연령 적합도순</button>
+    <button data-tab="popular">많이 빌린 책</button>
     <label id="noisyWrap" class="sub" style="margin:0 0 0 auto;font-size:12px;display:none"><input type="checkbox" id="showNoisy" /> 타연령 책도 보기</label>
   </div>
   <p class="sub" id="listInfo" style="margin:0 0 10px"></p>
-  <!-- 첫 화면: 서버에서 그린 상위 60권. 색인이 로드되면 아래 목록이 이어 붙는다 -->
+  <!-- 첫 화면: 서버에서 그린 추천도 상위 60권(스크립트가 바로 섞음). 색인이 로드되면 아래 목록으로 바뀐다 -->
   <section id="teaser" class="grid">{data.fit.map((b: any, i: number) => <BookCard b={b} rank={i + 1} age={age} mode="fit" />)}</section>
   <section id="list" class="grid"></section>
   <div id="more" style="text-align:center;margin:16px 0">
@@ -92,8 +94,32 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     const params = new URLSearchParams(location.search);
     for (const f of ['kdc2', 'form', 'flag', 'topic']) (params.get(f) || '').split(',').filter(Boolean).forEach((v) => state[f].add(v));
     state.pub = params.get('pub') || '';
-    if (params.get('tab') === 'popular') state.tab = 'popular';
+    if (['cent', 'popular'].includes(params.get('tab'))) state.tab = params.get('tab');
     state.lib = window.AgeShelfLib?.get() || null;
+
+    // 추천 도서 섞기: 추천도 순위 r 을 로그 척도에서 흔든다. 키 = ln(r + K) + σ·z, z ~ N(0,1) 은 책마다 페이지를 열 때 한 번 뽑아 고정
+    // (탭·필터를 오가도 같은 순서, 새로 열면 새 순서). 점수에 노이즈를 더하면 3세처럼 점수가 촘촘한 나이만 과하게 섞여 순위 기준으로 한다.
+    // K=4, σ=0.4 (실데이터 시뮬레이션): 1위 유지 약 45%, 상위 10권 중 7~8권 유지, 상위 10에 새로 드는 책은 대개 30위 이내.
+    const MIX_K = 4, MIX_SIGMA = 0.4;
+    const mixZ = new Map();
+    function zOf(isbn) {
+      let z = mixZ.get(isbn);
+      if (z === undefined) { z = Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random()); mixZ.set(isbn, z); }
+      return z;
+    }
+    // rows 는 추천도순. head>0 이면 앞 head 권(첫 화면 카드)은 그 안에서만 섞어, 색인이 로드돼 목록이 바뀌어도 첫 화면 순서가 그대로 남는다
+    function mix(rows, head) {
+      return rows.map((b, r) => ({ b, g: head && r >= head ? 1 : 0, k: Math.log(r + 1 + MIX_K) + MIX_SIGMA * zOf(b.i) }))
+        .sort((x, y) => x.g - y.g || x.k - y.k).map((x) => x.b);
+    }
+    function mixTeaser() {
+      const box = $('#teaser');
+      mix([...box.children].map((el) => ({ i: el.dataset.isbn, el })), 0).forEach((x, n) => {
+        const rk = x.el.querySelector('.rk'); if (rk) rk.textContent = `#${n + 1}`;
+        box.appendChild(x.el);
+      });
+    }
+    mixTeaser();
 
     function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib; }
     function syncUI() {
@@ -109,7 +135,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const clr = $('#libClear'); if (clr) clr.hidden = !state.lib;
       const p = new URLSearchParams();
       for (const f of ['kdc2', 'form', 'flag', 'topic']) if (state[f].size) p.set(f, [...state[f]].join(','));
-      if (state.pub) p.set('pub', state.pub); if (state.tab === 'popular') p.set('tab', 'popular');
+      if (state.pub) p.set('pub', state.pub); if (state.tab !== 'fit') p.set('tab', state.tab);
       history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
     }
     async function loadIndex() {
@@ -131,13 +157,15 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
         (!state.kdc2.size || state.kdc2.has(b.k2)) && (!state.form.size || state.form.has(b.fm)) &&
         (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)) &&
         (!state.topic.size || [...state.topic].every((f) => ((b.tpb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub));
-      if (state.tab === 'popular') rows = rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
-      else rows = rows.filter((b) => b.elig).sort((x, y) => y.fit - x.fit);
-      return rows;
+      if (state.tab === 'popular') return rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
+      rows = rows.filter((b) => b.elig);
+      // 연령 적합도순: 카드에 보이는 적합도 %(내림) 기준, 같으면 추천도순
+      if (state.tab === 'cent') return rows.sort((x, y) => Math.floor(y.ce * 100) - Math.floor(x.ce * 100) || y.fit - x.fit);
+      return mix(rows.sort((x, y) => y.fit - x.fit), filtersActive() ? 0 : teaserN);
     }
     function renderMore() {
       const chunk = current.slice(shown, shown + PAGE);
-      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags, topics })).join(''));
+      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags, topics, sortBy: state.tab })).join(''));
       shown += chunk.length;
       const left = current.length - shown;
       $('#moreBtn').hidden = left <= 0;
@@ -149,15 +177,17 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const filtered = !!filtersActive();
       if (!index && !filtered && state.tab === 'fit') {          // 색인 없이도 첫 화면은 서버 카드로
         $('#teaser').hidden = false; $('#list').innerHTML = '';
-        $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 상위 ${teaserN}권 · 전체 목록 불러오는 중…`;
+        $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 추천도 상위 ${teaserN}권 · 전체 목록 불러오는 중…`;
         return;
       }
       $('#listInfo').textContent = '불러오는 중…';
+      if (!index) $('#teaser').hidden = true;     // 첫 화면 카드는 추천 도서·필터 없음 전용 — 다른 탭·필터 결과인 것처럼 남겨 두지 않는다
       try { await Promise.all([loadIndex(), loadLibSet()]); }
       catch (e) { $('#listInfo').textContent = '목록 데이터를 불러오지 못했습니다. 새로고침(Ctrl+F5) 해 주세요.'; console.error(e); return; }
       current = compute(); shown = 0;
       $('#teaser').hidden = true; $('#list').innerHTML = '';
-      const order = state.tab === 'popular' ? `${label} 대출 건수순` : '추천도(적합도 + 인기, 100점)순';
+      const order = state.tab === 'popular' ? `${label} 대출 건수순`
+        : state.tab === 'cent' ? '연령 적합도순(같으면 추천도순)' : '추천도(적합도 + 인기, 100점) 중심 · 볼 때마다 순서가 조금씩 바뀝니다';
       const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만` : '';
       $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}`;
       renderMore();
@@ -217,7 +247,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     if ('IntersectionObserver' in window) {
       new IntersectionObserver((es) => { if (es.some((x) => x.isIntersecting) && !$('#moreBtn').hidden) renderMore(); }, { rootMargin: '600px' }).observe($('#more'));
     }
-    if (filtersActive() || state.tab === 'popular') { $('#filters').open = !!filtersActive(); render(); }
+    if (filtersActive() || state.tab !== 'fit') { $('#filters').open = !!filtersActive(); render(); }
     else { render(); loadIndex().then(() => { if (!filtersActive() && state.tab === 'fit') render(); }).catch(() => {}); }
   </script>
 </Base>

@@ -3,22 +3,142 @@ import Base from '../layouts/Base.astro';
 import meta from '../data/meta.json';
 import { SITE_BASE } from '../config';
 const base = SITE_BASE;
+const m = meta as any;
 const ages: number[] = meta.ages;
-const previews = await Promise.all(ages.map(async (a) => (await import(`../data/ages/${a}.json`)).default));
+const labels: Record<string, string> = m.labels ?? {};
+const ageData = await Promise.all(ages.map(async (a) => (await import(`../data/ages/${a}.json`)).default));
+const nEligible: Record<number, number> = Object.fromEntries(ageData.map((d: any) => [d.age, d.n_eligible ?? 0]));
+const centMinPct = Math.round((m.cent_min ?? 0.3) * 100);
+const minLoans: number = m.min_loans ?? 30;
+const wCent: number = m.w_cent ?? 50;
+const wPop: number = m.w_pop ?? 50;
+const holdings = m.holdings ?? { regions: [], n_libs: 0 };
+const regionNames: Record<string, string> = m.region_names ?? {};
+// 소장 정보: 거의 모든 책을 모은 지역(서울·부산·경남)과 상위 몇 백 권만 모은 지역을 나눠 쓴다
+const byRegion: Record<string, number> = holdings.by_region ?? {};
+const maxHold = Math.max(0, ...Object.values(byRegion).map(Number));
+const fullRegions = (holdings.regions ?? []).filter((r: string) => Number(byRegion[r] ?? 0) >= maxHold / 2);
+const partRegions = (holdings.regions ?? []).filter((r: string) => !fullRegions.includes(r));
+const fullNames = fullRegions.map((r: string) => regionNames[r] ?? r).join('·');
+const partN = partRegions.length ? Math.min(...partRegions.map((r: string) => Number(byRegion[r] ?? 0))) : 0;
+const nTopics: number = (m.topics ?? []).length;
+// 막대 읽는 법 예시: 3세 추천도 1위 책(실데이터)
+const exAge = ages.includes(3) ? 3 : ages[0];
+const ex = (ageData.find((d: any) => d.age === exAge) as any)?.fit?.[0];
+const profAges: number[] = meta.profile_ages;
+const exMax = ex ? Math.max(...ex.prof) : 1;
 ---
-<Base title="연령별 인기 도서">
-  <h2>우리 아이 나이에 딱 맞는 책 찾기</h2>
-  <p class="sub">공공도서관 대출 데이터를 <b>한 살 단위</b>로 나누고, 각 나이의 독자가 <b>상대적으로 더 많이 고른</b> 책을 찾습니다. 도서 {meta.n_books_site.toLocaleString()}권 분석.</p>
-  <div class="grid">
-    {previews.map((p) => (
-      <a class="card" href={`${base}/age/${p.age}`} style="grid-template-columns:1fr">
-        <div>
-          <div class="title">{(meta as any).labels?.[String(p.age)] ?? `${p.age}세`}에 딱 맞는 책</div>
-          <ol class="meta" style="padding-left:18px;margin:6px 0 0">
-            {p.fit.slice(0, 5).map((b: any) => <li>{b.title} <span style="color:#aaa">· {b.band}</span></li>)}
-          </ol>
+<Base title="한 살 단위 어린이책 찾기">
+  <section class="hero">
+    <h2>우리 아이 나이에 맞는 책을<br />도서관 대출 기록으로 찾습니다</h2>
+    <p>
+      AgeShelf는 전국 공공도서관에서 <b>몇 살 아이가 어떤 책을 빌렸는지</b>를 <b>한 살 단위</b>로 나눠 보여 주는 사이트입니다.
+      서점 순위나 "0~5세 추천"처럼 넓은 묶음 대신, 우리 아이 또래가 실제로 고른 책을 기준으로 삼습니다.
+      2014년부터 쌓인 대출 기록에서 어린이책 {meta.n_books_total.toLocaleString()}권을 분석했습니다.
+    </p>
+  </section>
+
+  <section>
+    <h3>나이를 골라 시작하세요</h3>
+    <div class="agepick">
+      {ages.map((a) => (
+        <a href={`${base}/age/${a}`}><b>{labels[String(a)] ?? `${a}세`}</b><small>후보 {nEligible[a].toLocaleString()}권</small></a>
+      ))}
+      <a href={`${base}/months`} class="alt"><b>개월 수로</b><small>예: 30개월</small></a>
+    </div>
+  </section>
+
+  <section>
+    <h3>왜 한 살 단위인가요?</h3>
+    <p class="body">
+      도서관 통계의 연령 구분은 보통 0~5세(영유아)가 한 묶음이라, 두 돌 아이와 다섯 살 아이가 같은 순위표를 보게 됩니다.
+      하지만 아이 책은 한 살 차이로도 크게 달라서, 1세와 2세가 가장 많이 빌린 100권만 비교해도 절반 넘게 다른 책입니다.
+      그래서 나이를 한 살씩 따로 떼고, 많이 빌린 순위만으로는 가려지는 "그 나이 아이들이 중심인 책"을 연령 적합도로 골라냅니다.
+    </p>
+  </section>
+
+  <section>
+    <h3>책을 이렇게 골라요</h3>
+    <div class="explain">
+      <div class="box">
+        <h4>연령 적합도 <small>0~100%</small></h4>
+        <p>이 책을 빌린 아이들의 나이 분포에서 우리 아이 나이가 얼마나 <b>한가운데</b>에 가까운지를 봅니다.
+          여러 나이가 두루 보는 책이면 그 가운데 나이에서 높고, 이미 지난 어린 책에는 엄격하게, 앞으로 볼 큰 책에는 너그럽게 매깁니다.</p>
+      </div>
+      <div class="box">
+        <h4>추천도 <small>100점</small></h4>
+        <p>연령 적합도 {wCent}점 + 인기 {wPop}점. 인기는 그 나이의 대출 건수를 로그로 환산해, 너무 유명한 책 몇 권이 목록을 독차지하지 않게 했습니다.
+          연령 적합도 {centMinPct}% 이상, 그 나이 대출 {minLoans}건 이상인 책만 후보가 됩니다.</p>
+      </div>
+      <div class="box">
+        <h4>세 가지 목록</h4>
+        <p><b>추천 도서</b>는 추천도 중심으로 보여 주되 볼 때마다 순서를 조금씩 섞어 새 책을 만나게 합니다.
+          <b>연령 적합도순</b>은 나이에 가장 잘 맞는 책부터, <b>많이 빌린 책</b>은 그 나이 대출 건수순입니다.</p>
+      </div>
+    </div>
+    {ex && (
+      <div class="example">
+        <div class="exbars">
+          <div class="bars">{profAges.map((a, i) => <i class={(a === exAge ? 'on ' : '') + (ex.obs[i] ? '' : 'miss')} style={`height:${Math.max(6, Math.round(100 * ex.prof[i] / exMax))}%`} title={`${a}세 ${(100 * ex.prof[i]).toFixed(0)}%`}></i>)}</div>
+          <div class="axis">{profAges.map((a) => <span>{a}</span>)}</div>
         </div>
-      </a>
-    ))}
-  </div>
+        <p>
+          <b>카드의 막대 읽는 법</b> — 예시 「{String(ex.title).trim()}」. 막대는 이 책을 빌린 아이들의 나이별 비중(1~13세)이고, 주황색이 지금 보고 있는 나이({labels[String(exAge)] ?? `${exAge}세`})입니다.
+          빌린 아이들의 중앙 나이는 {Number(ex.median ?? ex.peak).toFixed(1)}세, {labels[String(exAge)] ?? `${exAge}세`} 연령 적합도는 {Math.floor((ex.cent ?? 0) * 100)}%입니다.
+          카드의 "추천 {ex.band}"는 빌린 아이들 가운데 절반이 몰린 나이 구간입니다.
+        </p>
+      </div>
+    )}
+  </section>
+
+  <section>
+    <h3>이런 것도 할 수 있어요</h3>
+    <ul class="features">
+      <li><b>필터</b> 주제 {nTopics}가지(동물·탈것·잠자리·감정…), 분야, 그림책·전집·단행본 같은 형태, 요즘 인기·10년 스테디셀러 같은 성격, 출판사로 좁혀 봅니다.</li>
+      {holdings.n_libs > 0 && <li><b>우리 동네 도서관</b> 도서관 {Number(holdings.n_libs).toLocaleString()}곳의 소장 정보로 "이 도서관에 있는 책만" 볼 수 있고, 내 주변 도서관도 찾아 줍니다.
+        {fullNames}은 거의 모든 책{partRegions.length > 0 && `, 그 밖의 ${partRegions.length}개 시도는 추천 상위 ${partN.toLocaleString()}권`}의 소장 정보가 있습니다.</li>}
+      <li><b>개월 수로 찾기</b> 30개월처럼 개월 수를 넣으면 인접한 두 나이의 점수를 비율대로 섞어 다시 매깁니다.</li>
+      <li><b>검색·책 상세</b> 제목·저자로 찾고, 책마다 나이별 대출 분포와 키워드, 소장 도서관을 확인합니다. 도서관 이름을 누르면 그 도서관 홈페이지에서 이 책을 검색한 결과(자료실·청구기호·대출 가능 여부)로 이어집니다.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>데이터와 한계</h3>
+    <ul class="limits">
+      <li>출처는 {meta.source}이며, 나이는 <b>대출 당시</b> 도서관 회원의 나이입니다.</li>
+      <li>아이 책을 부모 카드로 빌리면 부모 나이로 잡히는 등 가족 카드 혼용의 한계가 있습니다.</li>
+      <li>0세 대출은 생년이 없는 학급·기관 단체대출이 대부분이라 제외했고, "0~1세"는 1세(12~23개월) 대출을 기준으로 합니다.</li>
+      <li>조건마다 상위 5,000건까지만 제공되는 데이터라 대출이 적은 책은 빠질 수 있습니다. 소장 정보는 수집 시점 기준이며, 대출 가능 여부는 도서관 홈페이지에서 확인해 주세요.</li>
+    </ul>
+  </section>
 </Base>
+
+<style>
+  section { margin:0 0 28px; }
+  h3 { font-size:17px; margin:0 0 10px; letter-spacing:-0.01em; }
+  .hero { padding:8px 0 4px; }
+  .hero h2 { font-size:26px; line-height:1.35; margin:0 0 12px; }
+  .hero p, .body { font-size:15px; color:#3d3a34; margin:0; max-width:760px; }
+  .agepick { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:8px; }
+  .agepick a { display:flex; flex-direction:column; gap:2px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:#fff; }
+  .agepick a:hover { border-color:var(--accent); }
+  .agepick b { font-size:18px; color:var(--accent); }
+  .agepick small { font-size:12px; color:var(--muted); }
+  .agepick a.alt b { color:var(--accent2); }
+  .explain { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; }
+  .box { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .box h4 { margin:0 0 6px; font-size:15px; }
+  .box h4 small { font-weight:400; color:var(--muted); font-size:12px; margin-left:4px; }
+  .box p { margin:0; font-size:14px; color:#3d3a34; }
+  .example { display:grid; grid-template-columns:220px 1fr; gap:16px; align-items:center; margin-top:12px; padding:14px 16px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+  .example .bars { height:56px; }
+  .example p { margin:0; font-size:13px; color:#3d3a34; }
+  .features, .limits { margin:0; padding-left:18px; font-size:14px; color:#3d3a34; }
+  .features li, .limits li { margin:0 0 6px; }
+  .features b { margin-right:6px; }
+  .limits { color:var(--muted); font-size:13px; }
+  @media (max-width:560px) {
+    .hero h2 { font-size:22px; }
+    .example { grid-template-columns:1fr; }
+  }
+</style>
