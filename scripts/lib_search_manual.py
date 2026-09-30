@@ -18,6 +18,10 @@ BUKGU = "POST utf-8 https://www.bsbukgu.go.kr/hmlib/index.bsbukgu?menuCd=DOM_000
 JIN = "https://www.busanjin.go.kr/library/index.busanjin?menuCd=DOM_000002103001000000&booktype=BOOK&pageno=1&manage_code={mc}&search_title={{t}}"
 SAHA = "https://www.saha.go.kr/hadanlib/booksearch/list.do?mId=0301000000&page=1&searchType=search_title&book_type=BOOK&display=10&manage_code={mc}&searchTxt={{t}}"
 HUB = "POST utf-8 https://library.busan.go.kr/{hub}/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code={mc}&option=0&search_txt={{t}}"
+# 해운대구 통합검색(BR 인문학·AT 반여·GQ 작은인문학·AZ 재송어린이·KS 우2동 작은도서관): manage_code 를 반복하면 여러 분관을 한 번에 찾고
+# 결과마다 소장처가 나온다. 2026-09-30 OPAC 대조에서 정보나루 소장 정보가 분관별로 94·50·71% 만 맞아서(폐기·다른 분관 소장) 세 곳 모두 전 분관 검색.
+HAEUNDAE = ("https://www.haeundae.go.kr/library/index.do?menuCd=DOM_000001001001001000&search_type=normal&search_category=search_title"
+            "&pageno=1&display=30&manage_code=BR&manage_code=AT&manage_code=GQ&manage_code=AZ&manage_code=KS&search_txt={t}")
 
 SPEC = {  # libCode: (템플릿, 설명)
     "126144": (GIJANG.format(lp="jglib"), "기장군 통합검색 정관"),
@@ -39,6 +43,9 @@ SPEC = {  # libCode: (템플릿, 설명)
     "126015": (HUB.format(hub="ydbooks", mc="BB"), "부산 통합검색 허브 영도 남항분관"),
     "121025": (HUB.format(hub="ssbooks", mc="AW"), "부산 통합검색 허브 사상(홈페이지 링크의 구청 통합검색은 오탐)"),
     "121018": (HUB.format(hub="gjbooks", mc="AP"), "부산 통합검색 허브 금정(옛 홈페이지는 구청 첫 화면으로 넘어감)"),
+    "126154": (HAEUNDAE, "해운대구 통합검색 전 분관(해운대인문학 BR)"),
+    "121022": (HAEUNDAE, "해운대구 통합검색 전 분관(반여 AT — 홈페이지 단위 템플릿은 BR 로 잘못 검색했음)"),
+    "126008": (HAEUNDAE, "해운대구 통합검색 전 분관(재송어린이 AZ — 홈페이지 단위 템플릿은 BR 로 잘못 검색했음)"),
 }
 # ---- 경남
 CW = "https://lib.changwon.go.kr/book/search.php?search_txt={{t}}&manage_code={mc}&pageno=1&display=10&search_type=normal&lib_code=cl"

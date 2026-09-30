@@ -85,7 +85,7 @@ const topics: string[] = (meta as any).topics ?? [];
       </div>
       <section id="holdings" class="card" style="grid-template-columns:minmax(0,1fr);max-width:760px;margin-top:12px" hidden>
         <div><h3 style="font-size:15px;margin:0 0 6px">소장 도서관 <span id="holdCount" class="sub" style="margin:0"></span></h3>
-        <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 수집 시점의 ISBN 기준입니다. 도서관 이름을 누르면 그 도서관 홈페이지에서 이 책을 검색한 결과(자료실·청구기호·대출 가능 여부)가 새 탭에 열립니다. <span title="검색 결과로 바로 연결">↗</span> 표시가 없는 곳은 홈페이지(또는 검색 페이지)가 열리고 제목이 복사되니 검색창에 붙여 넣으세요. <button class="chip" id="holdNear" type="button">내 위치에서 가까운 순</button></p>
+        <p class="sub" style="font-size:12px;margin:0 0 8px">소장 여부는 도서관정보나루 자료(수집 시점, ISBN 기준)라 이미 폐기됐거나 다른 분관으로 옮긴 책이 남아 있는 등 실제와 다를 수 있습니다. 도서관 이름을 누르면 그 도서관 홈페이지에서 이 책을 검색한 결과(자료실·청구기호·대출 가능 여부)가 새 탭에 열립니다. <span title="검색 결과로 바로 연결">↗</span> 표시가 없는 곳은 홈페이지(또는 검색 페이지)가 열리고 제목이 복사되니 검색창에 붙여 넣으세요. <button class="chip" id="holdNear" type="button">내 위치에서 가까운 순</button></p>
         <div id="holdList" style="font-size:13px"></div></div>
       </section>`;
       renderHoldings(b.libs || [], b);

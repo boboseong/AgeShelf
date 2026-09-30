@@ -13126,6 +13126,19 @@
   ],
   "url": "POST utf-8 https://library.busan.go.kr/gjbooks/book/search/collectionOfMaterials searchMode=normal&procMode=search&search_type=normal&pageno=1&display=10&manage_code=AP&option=0&search_txt={t}"
  },
+ "lib:121022": {
+  "checked": "2026-09-30",
+  "how": "manual",
+  "libs": 1,
+  "note": "해운대구 통합검색 전 분관(반여 AT — 홈페이지 단위 템플릿은 BR 로 잘못 검색했음)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.haeundae.go.kr/library/index.do?menuCd=DOM_000001001001001000&search_type=normal&search_category=search_title&pageno=1&display=30&manage_code=BR&manage_code=AT&manage_code=GQ&manage_code=AZ&manage_code=KS&search_txt={t}"
+ },
  "lib:121023": {
   "checked": "2026-09-23",
   "how": "manual",
@@ -13164,6 +13177,19 @@
    "흔한남매"
   ],
   "url": "POST utf-8 https://library.gijang.go.kr/portal/kolas/book/search.do?mId=1000000000 _csrf=temp%20_csrf&libraryPath=gijang&search_txt={t}&display=10"
+ },
+ "lib:126008": {
+  "checked": "2026-09-30",
+  "how": "manual",
+  "libs": 1,
+  "note": "해운대구 통합검색 전 분관(재송어린이 AZ — 홈페이지 단위 템플릿은 BR 로 잘못 검색했음)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.haeundae.go.kr/library/index.do?menuCd=DOM_000001001001001000&search_type=normal&search_category=search_title&pageno=1&display=30&manage_code=BR&manage_code=AT&manage_code=GQ&manage_code=AZ&manage_code=KS&search_txt={t}"
  },
  "lib:126015": {
   "checked": "2026-09-23",
@@ -13276,6 +13302,19 @@
    "흔한남매"
   ],
   "url": "POST utf-8 https://www.bsbukgu.go.kr/hmlib/index.bsbukgu?menuCd=DOM_000001203001000000&mode=result search_category=search_title&libraryPath=bglib&search_txt={t}"
+ },
+ "lib:126154": {
+  "checked": "2026-09-30",
+  "how": "manual",
+  "libs": 1,
+  "note": "해운대구 통합검색 전 분관(해운대인문학 BR)",
+  "ok": true,
+  "query": "title",
+  "sample": [
+   "9791164134267",
+   "흔한남매"
+  ],
+  "url": "https://www.haeundae.go.kr/library/index.do?menuCd=DOM_000001001001001000&search_type=normal&search_category=search_title&pageno=1&display=30&manage_code=BR&manage_code=AT&manage_code=GQ&manage_code=AZ&manage_code=KS&search_txt={t}"
  },
  "lib:126159": {
   "checked": "2026-09-23",
