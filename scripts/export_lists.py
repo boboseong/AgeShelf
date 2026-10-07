@@ -7,12 +7,16 @@ ROOT = Path(__file__).resolve().parents[1]; PROC = ROOT / "data" / "processed"; 
 books = pd.read_parquet(PROC / "books_metrics.parquet").set_index("isbn13", drop=False)
 ranks = pd.read_parquet(PROC / "age_ranks.parquet")
 OUT.mkdir(exist_ok=True)
-from export_site import diversify  # noqa: E402  (시리즈당 최대 3권)
+from export_site import dedupe_editions  # noqa: E402  (같은 책 다른 판은 한 권만)
+from groups import build_groups  # noqa: E402
+tags_p = PROC / "book_tags.parquet"
+gb = books.join(pd.read_parquet(tags_p).set_index("isbn13")[["form", "publisher_norm"]]) if tags_p.exists() else books
+wk = build_groups(gb).wk
 cols = ["bookname", "authors", "publisher", "publication_year", "band", "peak_age", "shape", "is_picture", "total_loans"]
 for a in sorted(ranks.age.unique()):
     r = ranks[ranks.age == a]
-    for kind, sel in (("fit", diversify(r[r.fit_rank.notna()].nsmallest(300, "fit_rank"), books, 100)),
-                      ("pop", diversify(r[r.observed & (r.cent >= 0.2)].nsmallest(300, "pop_rank"), books, 100))):
+    for kind, sel in (("fit", dedupe_editions(r[r.fit_rank.notna()].nsmallest(300, "fit_rank"), wk, 100)),
+                      ("pop", dedupe_editions(r[r.observed & (r.cent >= 0.2)].nsmallest(300, "pop_rank"), wk, 100))):
         df = sel[["isbn13", "loan_count", "cent", "pop_score", "fit_score"]].merge(books[cols], left_on="isbn13", right_index=True)
         df.insert(0, "rank", range(1, len(df) + 1))
         df.rename(columns={"loan_count": f"{a}세_대출", "cent": "적합도", "pop_score": "인기점수(50)", "fit_score": "추천도(100)",

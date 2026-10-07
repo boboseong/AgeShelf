@@ -40,6 +40,13 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
 
   <details class="filters" id="filters">
     <summary>필터 <span id="filterSummary" class="sub" style="margin:0"></span></summary>
+    <div class="fgroup"><div class="flabel">한 권씩</div>
+      <div class="fchips">
+        <button class="chip" data-one="a" type="button">작가당 1권</button>
+        <button class="chip" data-one="s" type="button">시리즈당 1권</button>
+        <span class="sub" style="margin:0;font-size:11px">같은 작가·시리즈 책은 지금 순서에서 가장 앞선 한 권만 보여 줍니다. 같은 책의 다른 판은 늘 한 권만 보입니다.</span>
+      </div>
+    </div>
     {holdRegions.length > 0 && <div class="fgroup"><div class="flabel">도서관</div>
       <div class="fchips">
         <select id="libRegion"><option value="">지역 선택</option>{holdRegions.map((r) => <option value={r}>{regionNames[r] ?? r}</option>)}</select>
@@ -76,6 +83,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     <label id="noisyWrap" class="sub" style="margin:0 0 0 auto;font-size:12px;display:none"><input type="checkbox" id="showNoisy" /> 타연령 책도 보기</label>
   </div>
   <p class="sub" id="listInfo" style="margin:0 0 10px"></p>
+  <div id="grpBar" class="fchips" style="margin:0 0 10px" hidden></div>
   <!-- 첫 화면: 서버에서 그린 추천도 상위 60권(스크립트가 바로 섞음). 색인이 로드되면 아래 목록으로 바뀐다 -->
   <section id="teaser" class="grid">{data.fit.map((b: any, i: number) => <BookCard b={b} rank={i + 1} age={age} mode="fit" />)}</section>
   <section id="list" class="grid"></section>
@@ -87,13 +95,17 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
   <script is:inline define:vars={{ age, label, profAges, base, kdc2Names, flagTags, topics, regionNames, nEligible, nIndex, teaserN: (meta as any).teaser_n ?? 60 }}>
     const $ = (s) => document.querySelector(s);
     const PAGE = 100;
-    const state = { kdc2: new Set(), form: new Set(), flag: new Set(), topic: new Set(), pub: '', lib: null, tab: 'fit', noisy: false };
+    const state = { kdc2: new Set(), form: new Set(), flag: new Set(), topic: new Set(), pub: '', lib: null, tab: 'fit', noisy: false,
+      one: new Set(), au: '', ser: '' };   // one: 'a' 작가당 1권 · 's' 시리즈당 1권, au·ser: 이 작가·시리즈 책만
+    let more = new Map();  // 대표 카드 isbn → { a, s } 숨긴 같은 작가·시리즈 책 수
     let index = null, loading = null, libSet = null, libSetCode = null;
     let current = [];      // 현재 조건의 전체 결과 (시리즈 캡 적용, 순서대로)
     let shown = 0;
     const params = new URLSearchParams(location.search);
     for (const f of ['kdc2', 'form', 'flag', 'topic']) (params.get(f) || '').split(',').filter(Boolean).forEach((v) => state[f].add(v));
     state.pub = params.get('pub') || '';
+    (params.get('one') || '').split(',').filter((v) => v === 'a' || v === 's').forEach((v) => state.one.add(v));
+    state.au = params.get('au') || ''; state.ser = params.get('ser') || '';
     if (['cent', 'popular'].includes(params.get('tab'))) state.tab = params.get('tab');
     state.lib = window.AgeShelfLib?.get() || null;
 
@@ -121,9 +133,10 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     }
     mixTeaser();
 
-    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib; }
+    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib || state.one.size || state.au || state.ser; }
     function syncUI() {
       document.querySelectorAll('.chip[data-f]').forEach((c) => c.classList.toggle('on', state[c.dataset.f].has(c.dataset.v)));
+      document.querySelectorAll('.chip[data-one]').forEach((c) => c.classList.toggle('on', state.one.has(c.dataset.one)));
       const sel = $('#pubSelect'); if (sel) sel.value = state.pub;
       document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === state.tab));
       $('#noisyWrap').style.display = state.tab === 'popular' ? '' : 'none';
@@ -131,11 +144,18 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       if (state.lib) parts.push(`${state.lib.name} 소장`);
       state.kdc2.forEach((v) => parts.push(kdc2Names[v] || v)); state.form.forEach((v) => parts.push(v));
       state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); state.topic.forEach((v) => parts.push(topics[Number(v)] || v)); if (state.pub) parts.push(state.pub);
+      if (state.one.has('a')) parts.push('작가당 1권'); if (state.one.has('s')) parts.push('시리즈당 1권');
+      if (state.au) parts.push(`작가: ${state.au}`); if (state.ser) parts.push(`시리즈: ${state.ser}`);
+      const bar = $('#grpBar'), esc = (v) => v.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      bar.innerHTML = (state.au ? `<button class="chip on" type="button" data-clear="au" aria-label="작가 ${esc(state.au)} 보기 해제">작가: ${esc(state.au)} ✕</button>` : '')
+        + (state.ser ? `<button class="chip on" type="button" data-clear="ser" aria-label="시리즈 ${esc(state.ser)} 보기 해제">시리즈: ${esc(state.ser)} ✕</button>` : '');
+      bar.hidden = !(state.au || state.ser);
       $('#filterSummary').textContent = parts.length ? '· ' + parts.join(', ') : '';
       const clr = $('#libClear'); if (clr) clr.hidden = !state.lib;
       const p = new URLSearchParams();
       for (const f of ['kdc2', 'form', 'flag', 'topic']) if (state[f].size) p.set(f, [...state[f]].join(','));
       if (state.pub) p.set('pub', state.pub); if (state.tab !== 'fit') p.set('tab', state.tab);
+      if (state.one.size) p.set('one', [...state.one].sort().join(',')); if (state.au) p.set('au', state.au); if (state.ser) p.set('ser', state.ser);
       history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : ''));
     }
     async function loadIndex() {
@@ -156,16 +176,24 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
         (!ls || ls.has(b.i)) &&
         (!state.kdc2.size || state.kdc2.has(b.k2)) && (!state.form.size || state.form.has(b.fm)) &&
         (!state.flag.size || [...state.flag].every((f) => ((b.flb || 0) >> Number(f)) & 1)) &&
-        (!state.topic.size || [...state.topic].every((f) => ((b.tpb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub));
-      if (state.tab === 'popular') return rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
-      rows = rows.filter((b) => b.elig);
-      // 연령 적합도순: 카드에 보이는 적합도 %(내림) 기준, 같으면 추천도순
-      if (state.tab === 'cent') return rows.sort((x, y) => Math.floor(y.ce * 100) - Math.floor(x.ce * 100) || y.fit - x.fit);
-      return mix(rows.sort((x, y) => y.fit - x.fit), filtersActive() ? 0 : teaserN);
+        (!state.topic.size || [...state.topic].every((f) => ((b.tpb || 0) >> Number(f)) & 1)) && (!state.pub || b.pn === state.pub) &&
+        (!state.au || b.an === state.au) && (!state.ser || b.sn === state.ser));
+      if (state.tab === 'popular') rows = rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
+      else {
+        rows = rows.filter((b) => b.elig);
+        // 연령 적합도순: 카드에 보이는 적합도 %(내림) 기준, 같으면 추천도순
+        if (state.tab === 'cent') rows.sort((x, y) => Math.floor(y.ce * 100) - Math.floor(x.ce * 100) || y.fit - x.fit);
+        else rows.sort((x, y) => y.fit - x.fit);
+      }
+      // 같은 책 다른 판은 늘 한 권, 작가·시리즈는 켰을 때 정렬 순서상 맨 앞 한 권 (섞기 전에 골라야 대표가 그 묶음의 추천도 1등이 된다).
+      // 특정 작가만 보는 중이면 작가당 1권은 의미가 없고, 특정 시리즈만 보는 중이면 둘 다 끈다(그 시리즈 전체를 보려고 누른 것)
+      const one = window.AgeShelfOnePer(rows, state.one.has('a') && !state.au && !state.ser, state.one.has('s') && !state.ser);
+      more = one.more;
+      return state.tab === 'fit' ? mix(one.rows, filtersActive() ? 0 : teaserN) : one.rows;
     }
     function renderMore() {
       const chunk = current.slice(shown, shown + PAGE);
-      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags, topics, sortBy: state.tab })).join(''));
+      $('#list').insertAdjacentHTML('beforeend', chunk.map((b, k) => window.AgeShelfCard(b, { rank: shown + k + 1, age, ageLabel: label, profAges, base, kdcNames: kdc2Names, flagTags, topics, sortBy: state.tab, more: more.get(b.i) })).join(''));
       shown += chunk.length;
       const left = current.length - shown;
       $('#moreBtn').hidden = left <= 0;
@@ -189,7 +217,8 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const order = state.tab === 'popular' ? `${label} 대출 건수순`
         : state.tab === 'cent' ? '연령 적합도순(같으면 추천도순)' : '추천도(적합도 + 인기, 100점) 중심 · 볼 때마다 순서가 조금씩 바뀝니다';
       const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만` : '';
-      $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}`;
+      const oneNote = state.one.size ? ` · ${[state.one.has('a') && '작가', state.one.has('s') && '시리즈'].filter(Boolean).join('·')}당 1권` : '';
+      $('#listInfo').textContent = `후보 ${nEligible.toLocaleString()}권 중 ${current.length.toLocaleString()}권 · ${order}${libNote}${oneNote}`;
       renderMore();
     }
     // 도서관 피커
@@ -230,8 +259,19 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const s = state[c.dataset.f]; s.has(c.dataset.v) ? s.delete(c.dataset.v) : s.add(c.dataset.v); render();
     }));
     $('#pubSelect')?.addEventListener('change', (e) => { state.pub = e.target.value; render(); });
+    document.querySelectorAll('.chip[data-one]').forEach((c) => c.addEventListener('click', () => {
+      const v = c.dataset.one; state.one.has(v) ? state.one.delete(v) : state.one.add(v); render();
+    }));
+    // 대표 카드의 "같은 작가 책 +N권" → 그 작가(시리즈) 책만, 목록 위 해제 칩 → 원래 목록
+    document.addEventListener('click', (e) => {
+      const g = e.target.closest('.grp-more, #grpBar [data-clear]'); if (!g) return;
+      if (g.dataset.clear) state[g.dataset.clear] = '';
+      else { state.au = g.dataset.g === 'au' ? g.dataset.v : ''; state.ser = g.dataset.g === 'ser' ? g.dataset.v : ''; }
+      render(); $('#listInfo').scrollIntoView({ block: 'nearest' });
+    });
     $('#clearFilters')?.addEventListener('click', () => {
       state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.topic.clear(); state.pub = '';
+      state.one.clear(); state.au = ''; state.ser = '';
       state.lib = null; window.AgeShelfLib?.set(null); const ls = $('#libSelect'); if (ls) ls.value = '';
       render();
     });

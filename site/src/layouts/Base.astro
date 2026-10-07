@@ -43,6 +43,10 @@ const current = Astro.url.pathname;
     .act:hover { border-color:var(--accent2); color:var(--accent2); }
     .act[aria-disabled="true"] { background:#f3f1ec; border-color:#ebe7df; color:#b1aa9e; cursor:not-allowed; }
     .badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    /* '작가당 1권'·'시리즈당 1권' 대표 카드: 숨긴 책 보기 */
+    .card .grp { grid-column:2; display:flex; flex-wrap:wrap; gap:4px; margin-top:-4px; }
+    .grp-more { font:inherit; font-size:11px; padding:2px 8px; border:1px dashed var(--accent2); border-radius:999px; background:#fff; color:var(--accent2); cursor:pointer; }
+    .grp-more:hover { background:#e6f1ec; }
     .badge { font-size:11px; padding:2px 7px; border-radius:999px; background:#f1eee7; color:#4d493f; }
     .badge.band { background:#e6f1ec; color:var(--accent2); font-weight:600; }
     .badge.pic { background:#fdeadb; color:#9a4a12; }

@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_metrics import CENT_MIN, GAMMA, MIN_LOANS_AT_AGE, W_CENT, W_POP  # noqa: E402
 from topics import TOPIC_NAMES  # noqa: E402
 from tags import KDC1_NAME, KDC2_NAME  # noqa: E402
+from groups import build_groups  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[1]
@@ -38,7 +39,6 @@ TEASER_N = 60                     # 나이 페이지 HTML 에 박는 첫 화면 
 POP_EXTRA = 3000                  # 색인에 추가로 넣는 인기순 상위(자격 미달 포함)
 SEARCH_MAX = None                 # 검색 색인 도서 수 (None = 전체)
 SITE_MIN_TOTAL = 30               # 사이트 전체(검색·상세 조각·소장 파일·색인) 수록 하한: 총 대출 30건 (2026-09-13 사용자 결정)
-SERIES_CAP = None                 # 시리즈당 권수 제한 (None = 제한 없음, 사용자 결정 2026-09-10)
 POOL_PUBLISHERS = 60              # 나이별 출판사 facet 수 (그 나이 후보 도서 수 기준 상위)
 FLAG_TAGS = ["요즘 인기", "베스트셀러", "여러 나이 스테디", "10년 스테디셀러", "먼저 보기 좋은", "커서도 보는"]
 FLAG_CODE = {t: i for i, t in enumerate(FLAG_TAGS)}
@@ -52,31 +52,14 @@ REGION_NAMES = {"11": "서울", "21": "부산", "22": "대구", "23": "인천", 
 HOLDINGS: dict[str, list[str]] = {}   # isbn13 → libCode 목록 (핵심 도서만)
 
 
-def series_key(b: pd.Series) -> str:
-    """시리즈·전집 묶음 키.
-    1) 제목이 '(시리즈명) …' 이면 괄호 안, 2) '시리즈명 :부제' 이면 콜론 앞,
-    3) 아니면 ISBN 출판사 접두(9자리) + 출판년 + 부가기호 (출판사명이 비어도 동작)."""
-    t = str(b.bookname or "").strip()
-    m = re.match(r"^\(([^)]{2,})\)", t)
-    if m:
-        return "T:" + re.sub(r"\s+", "", m.group(1))
-    if ":" in t:
-        head = re.sub(r"\s+", "", t.split(":", 1)[0])
-        if len(head) >= 2:
-            return "T:" + head
-    return f"{str(b.isbn13)[:9]}|{b.publication_year}|{b.addition_symbol}"
-
-
-def diversify(df: pd.DataFrame, books: pd.DataFrame, n: int, cap: int = SERIES_CAP) -> pd.DataFrame:
-    """순위 순서를 유지하면서 시리즈 키당 cap 권까지만 남기고 n 권을 채운다. cap 이 없으면 상위 n 권 그대로."""
-    if not cap:
-        return df.head(n)
-    keep, seen = [], {}
+def dedupe_editions(df: pd.DataFrame, wk: pd.Series, n: int) -> pd.DataFrame:
+    """순위 순서를 유지하면서 같은 책의 다른 판(groups.build_groups 의 wk)은 맨 앞 한 권만 남기고 n 권을 채운다 (2026-10-07 사용자 결정)."""
+    keep, seen = [], set()
     for i, isbn in enumerate(df.isbn13):
-        k = series_key(books.loc[isbn])
-        if seen.get(k, 0) >= cap:
+        k = wk.get(isbn, isbn)
+        if k in seen:
             continue
-        seen[k] = seen.get(k, 0) + 1
+        seen.add(k)
         keep.append(i)
         if len(keep) >= n:
             break
@@ -122,7 +105,7 @@ def book_card(b: pd.Series) -> dict:
         "skew": float(b.get("skew", 0.0)), "shape": str(b.get("shape", "")),
         "kdc2": str(b.get("kdc2", "") or ""), "kdc2n": str(b.get("kdc2_name", "") or ""), "kdc1n": str(b.get("kdc1_name", "") or ""),
         "form": str(b.get("form", "") or ""), "pubn": str(b.get("publisher_norm", "") or ""),
-        "flags": flags_of(b), "sk": series_key(b),
+        "flags": flags_of(b), "sk": str(b.get("sk", "") or ""),
         "topics": [TOPIC_NAMES[i] for i in (b.get("topics", None) if b.get("topics", None) is not None else [])],
         "kw": json.loads(b["kw"]) if isinstance(b.get("kw", ""), str) and b.get("kw", "") else [],
         "upper": [int(b.get(f"upper_{a}", b[f"loan_{a}"])) for a in ALL_AGES],
@@ -162,13 +145,28 @@ def write_shards(books: pd.DataFrame, out_dir: Path, nshards: int = 1000) -> Non
 def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple[dict, dict]:
     """나이 a 의 얇은 색인(후보 전체 + 인기순 상위)과 facet 요약.
     행: [isbn, 제목, 저자, 출판사idx, 연도, 표지[prefix,rest], 밴드, 중앙나이, 형태코드, 그림책, kdc2, 형태idx,
-         성격비트, 추천도, 인기순위, 위치, 대출, 시리즈id, 비중13자, 자격, 주제비트]"""
+         성격비트, 추천도, 인기순위, 위치, 대출, 시리즈idx, 비중13자, 자격, 주제비트, 작가idx, 판idx]
+    시리즈·작가 idx 는 이 색인의 series/authors(이름) 목록 위치, 판idx 가 같은 행은 같은 책의 다른 판.
+    셋 다 이 색인 안에 2권 이상인 묶음에만 번호를 주고 나머지는 -1 (한 권짜리 이름까지 실으면 색인이 30% 커진다)."""
     el = ranks_a[ranks_a.fit_rank.notna()].sort_values("fit_rank")
     pop_extra = ranks_a[ranks_a.fit_rank.isna() & ranks_a.pop_rank.notna()].nsmallest(POP_EXTRA, "pop_rank")
     src = pd.concat([el, pop_extra], ignore_index=True)
     pubs: dict[str, int] = {}
     pub_names: list[list[str]] = []
-    series: dict[str, int] = {}
+    grp = books.loc[src.isbn13, ["ak", "an", "sk", "sn", "wk"]]
+    multi = {c: set(grp[c].value_counts().loc[lambda v: v >= 2].index) - {""} for c in ("ak", "sk", "wk")}
+    ids: dict[str, dict[str, int]] = {"ak": {}, "sk": {}, "wk": {}}
+    names: dict[str, list[str]] = {"ak": [], "sk": []}
+
+    def gid(col: str, key: str, name: str = "") -> int:
+        if key not in multi[col]:
+            return -1
+        d = ids[col]
+        if key not in d:
+            d[key] = len(d)
+            if col in names:
+                names[col].append(name)
+        return d[key]
     rows = []
     for x in src.itertuples():
         b = books.loc[x.isbn13]
@@ -177,7 +175,6 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
         if pn not in pubs:
             pubs[pn] = len(pub_names)
             pub_names.append([pn, disp])
-        sid = series.setdefault(series_key(b), len(series))
         form = str(b.get("form", "") or "")
         rows.append([
             x.isbn13, (b.bookname or "").strip(), (b.authors or "")[:30], pubs[pn], str(b.publication_year or ""),
@@ -185,10 +182,11 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
             SHAPE_CODE.get(str(b.get("shape", "")), 0), 1 if bool(b.is_picture) else 0, str(b.get("kdc2", "") or ""),
             FORMS.index(form) if form in FORMS else 4, flag_bits(b),
             round(float(x.fit_score), 1) if pd.notna(x.fit_score) else 0,
-            int(x.pop_rank) if pd.notna(x.pop_rank) else 0, round(float(x.cent), 2), int(x.loan_count), sid, prof_q(b),
-            1 if pd.notna(x.fit_rank) else 0, int(b.get("topic_bits", 0) or 0),
+            int(x.pop_rank) if pd.notna(x.pop_rank) else 0, round(float(x.cent), 2), int(x.loan_count), gid("sk", b.sk, b.sn), prof_q(b),
+            1 if pd.notna(x.fit_rank) else 0, int(b.get("topic_bits", 0) or 0), gid("ak", b.ak, b.an), gid("wk", b.wk),
         ])
-    elm = el.merge(books[["kdc2", "form", "publisher_norm", "topic_bits", *FLAG_TAGS]], left_on="isbn13", right_index=True)
+    el_works = el[~el.isbn13.map(books.wk).duplicated()]       # facet 개수·후보 수는 같은 책 다른 판을 한 권으로 센다
+    elm = el_works.merge(books[["kdc2", "form", "publisher_norm", "topic_bits", *FLAG_TAGS]], left_on="isbn13", right_index=True)
     facets: dict[str, list] = {"kdc2": [], "form": [], "pub": [], "flag": [], "topic": []}
     tb = elm.topic_bits.fillna(0).astype(int).to_numpy()
     for ti, tn in enumerate(TOPIC_NAMES):
@@ -203,10 +201,25 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
         facets["pub"].append([pn, int(cnt)])
     for t in FLAG_TAGS:
         facets["flag"].append([FLAG_CODE[t], t, int(elm[t].astype(bool).sum())])
+    # 시리즈 이름은 사이트에서 '이 시리즈만 보기' 필터·주소(ser=이름)로 쓰므로 색인 안에서 겹치지 않게: 겹치면 출판사, 그래도 겹치면 번호
+    keys = list(ids["sk"])
+    dup = pd.Series(names["sk"], dtype=object).duplicated(keep=False).tolist()
+    sub = books.loc[books.sk.isin({k for k, d in zip(keys, dup) if d}), ["sk", "publisher"]]
+    sub = sub[sub.publisher.fillna("").astype(str).str.strip() != ""]
+    first_pub = sub.groupby("sk").publisher.first().astype(str).str.strip().to_dict()
+    seen_names: set[str] = set()
+    for i, k in enumerate(keys):
+        nm = f"{names['sk'][i]} ({first_pub[k]})" if dup[i] and first_pub.get(k) else names["sk"][i]
+        base, j = nm, 2
+        while nm in seen_names:
+            nm, j = f"{base} {j}", j + 1
+        seen_names.add(nm)
+        names["sk"][i] = nm
     facets["kdc2"].sort(key=lambda r: (r[0][:1], -r[3]))
     facets["form"].sort(key=lambda r: -r[1])
-    index = {"age": a, "n_eligible": int(len(el)), "n": len(rows), "pubs": pub_names, "forms": FORMS,
-             "cover_prefix": COVER_PREFIX, "ages": ALL_AGES, "rows": rows}
+    index = {"age": a, "n_eligible": int(len(el_works)), "n": len(rows), "pubs": pub_names, "forms": FORMS,
+             "cover_prefix": COVER_PREFIX, "ages": ALL_AGES,
+             "series": names["sk"], "authors": names["ak"], "rows": rows}
     return index, facets
 
 
@@ -296,6 +309,8 @@ def main():
         books["kw"] = ""
     books["topic_bits"] = books["topic_bits"].fillna(0).astype(int)
     books["kw"] = books["kw"].fillna("")
+    books = books.join(build_groups(books))         # ak/an 대표 작가, wk 같은 책 다른 판, sk/sn 시리즈
+    print(f"묶음: 작가 {books.ak[books.ak != ''].nunique():,}명 · 판 묶음 {books.wk.nunique():,}(도서 {len(books):,}) · 시리즈 {books.sk.nunique():,}")
     global ALL_AGES
     ALL_AGES = sorted(int(c[5:]) for c in books.columns if c.startswith("prof_"))
     show = [a for a in SHOW_AGES if a in ALL_AGES]
@@ -305,8 +320,8 @@ def main():
     used: set[str] = set()
     for a in show:
         r = ranks[ranks.age == a]
-        pop = diversify(r[r.observed].nsmallest(args.top * 3, "pop_rank"), books, args.top)
-        fit = diversify(r[r.fit_rank.notna()].nsmallest(args.top * 3, "fit_rank"), books, args.top)
+        pop = dedupe_editions(r[r.observed].nsmallest(args.top * 3, "pop_rank"), books.wk, args.top)
+        fit = dedupe_editions(r[r.fit_rank.notna()].nsmallest(args.top * 3, "fit_rank"), books.wk, args.top)
 
         def rows(df):
             out = []

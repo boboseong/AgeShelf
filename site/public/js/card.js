@@ -9,15 +9,16 @@
     if (Array.isArray(q)) return q;
     return [...String(q || '')].map((ch) => Math.round((Q36.indexOf(ch) / 35) * 100));
   };
-  // 나이별 색인 행 → 카드 객체
+  // 나이별 색인 행 → 카드 객체. sk 시리즈·ai 작가·w 판 번호는 색인 안에 2권 이상인 묶음만 0 이상(나머지 -1)
   window.AgeShelfRow = function (r, idx) {
     const pub = idx.pubs[r[3]] || ['', ''];
     const cv = r[5] && r[5][1] ? ((r[5][0] >= 0 ? idx.cover_prefix[r[5][0]] : '') + r[5][1]) : '';
     return { i: r[0], t: r[1], au: r[2], pn: pub[0], pu: pub[1], yr: r[4], cv, band: r[6], med: r[7], sh: SHAPES[r[8]] || '',
-      pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17], prof: r[18], elig: r[19], tpb: r[20] || 0 };
+      pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17] ?? -1, prof: r[18], elig: r[19], tpb: r[20] || 0,
+      ai: r[21] ?? -1, w: r[22] ?? -1, an: r[21] >= 0 ? (idx.authors?.[r[21]] ?? '') : '', sn: r[17] >= 0 ? (idx.series?.[r[17]] ?? '') : '' };
   };
   window.AgeShelfCard = function (b, opts) {
-    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit' } = opts;
+    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit', more = null } = opts;
     const prof = window.AgeShelfProf(b.prof);
     const max = Math.max(...prof, 1);
     const bars = profAges.map((a, k) => `<i class="${a === age ? 'on' : ''}" style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
@@ -38,8 +39,16 @@
         : `#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})`}</div>
       <div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>
       <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.med).toFixed(1)}세</span>${b.sp >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.sh && b.sh !== '대칭' ? `<span class="badge">${esc(b.sh)}</span>` : ''}${b.pic ? '<span class="badge pic">그림책</span>' : ''}${chips.join('')}</div>
-      <div class="bars">${bars}</div><div class="axis">${axis}</div></a></div>`;
+      <div class="bars">${bars}</div><div class="axis">${axis}</div></a>${groupLinks(b, more)}</div>`;
   };
+  // '작가당 1권'·'시리즈당 1권'으로 숨긴 책이 있으면 대표 카드에 "같은 작가 책 +N권" (누르면 그 작가·시리즈만 보기)
+  function groupLinks(b, more) {
+    if (!more) return '';
+    const out = [];
+    if (more.a > 0 && b.an) out.push(`<button type="button" class="grp-more" data-g="au" data-v="${esc(b.an)}" title="${esc(b.an)}의 책만 보기">같은 작가 책 +${more.a}권</button>`);
+    if (more.s > 0 && b.sn) out.push(`<button type="button" class="grp-more" data-g="ser" data-v="${esc(b.sn)}" title="“${esc(b.sn)}” 시리즈만 보기">같은 시리즈 +${more.s}권</button>`);
+    return out.length ? `<div class="grp">${out.join('')}</div>` : '';
+  }
   // 선택한 도서관 (localStorage). {code, name, region}
   const LIB_KEY = 'ageshelf.lib';
   window.AgeShelfLib = {
@@ -149,10 +158,27 @@
     window.AgeShelfSyncActs();
     if (window.AgeShelfLib.get()) window.AgeShelfLib.directory().then(() => window.AgeShelfSyncActs()).catch(() => {});
   });
-  // 시리즈당 cap 권 제한 (순서 유지). 반환: 남긴 행 (n 제한 없음이면 전체)
-  window.AgeShelfDiversify = function (rows, cap, n) {
-    const seen = {}; const out = [];
-    for (const b of rows) { const k = b.sk ?? b.i; if ((seen[k] || 0) >= cap) continue; seen[k] = (seen[k] || 0) + 1; out.push(b); if (n && out.length >= n) break; }
-    return out;
+  // 순서를 유지하며 묶음당 한 권만: 같은 책 다른 판(w)은 항상, 작가(ai)·시리즈(sk)는 켰을 때만. 번호 -1 은 한 권짜리라 그대로 둔다.
+  // 반환 { rows, more }: more 는 대표 카드 isbn → { a, s } (목록 안에서 같은 작가·시리즈인 다른 책 수)
+  window.AgeShelfOnePer = function (rows, byAuthor, bySeries) {
+    const seenW = new Set();
+    rows = rows.filter((b) => b.w < 0 || (!seenW.has(b.w) && seenW.add(b.w)));
+    const more = new Map();
+    if (!byAuthor && !bySeries) return { rows, more };
+    const cntA = new Map(), cntS = new Map();
+    for (const b of rows) {
+      if (byAuthor && b.ai >= 0) cntA.set(b.ai, (cntA.get(b.ai) || 0) + 1);
+      if (bySeries && b.sk >= 0) cntS.set(b.sk, (cntS.get(b.sk) || 0) + 1);
+    }
+    const seenA = new Set(), seenS = new Set(), out = [];
+    for (const b of rows) {
+      const a = byAuthor && b.ai >= 0, s = bySeries && b.sk >= 0;
+      if ((a && seenA.has(b.ai)) || (s && seenS.has(b.sk))) continue;
+      if (a) seenA.add(b.ai);
+      if (s) seenS.add(b.sk);
+      out.push(b);
+      more.set(b.i, { a: a ? cntA.get(b.ai) - 1 : 0, s: s ? cntS.get(b.sk) - 1 : 0 });
+    }
+    return { rows: out, more };
   };
 })();
