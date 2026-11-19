@@ -1,6 +1,6 @@
 {
  "generated": "2026-10-07",
- "build": "20261119153710",
+ "build": "20261119231753",
  "sample": false,
  "ages": [
   1,
@@ -277,5 +277,13 @@
   2017,
   2016
  ],
- "year_min_loans": 30
+ "year_min_loans": 30,
+ "perlib": {
+  "years": [
+   2023,
+   2024,
+   2025
+  ],
+  "min_libs": 150
+ }
 }

@@ -5,6 +5,7 @@
   site/public/data/index/{a}.json   나이별 얇은 색인: 후보 전체 + 인기순 상위 (필터·정렬·더 보기용)
   site/public/data/search_index.json 검색 색인(전체 도서, 압축 행)
   site/public/data/books/NNN.json   전체 상세 조각,  libs.json / libs/{code}.json 소장 정보
+  site/public/data/year/{연도}/{나이}.json 연도별 대출순,  perlib/{나이}.json 도서관당 대출 (둘 다 카드 정보는 나이 색인에서)
 
 실행: python scripts/export_site.py            # data/processed 사용
       python scripts/export_site.py --sample   # data/sample (합성) 사용
@@ -27,6 +28,7 @@ from topics import TOPIC_NAMES  # noqa: E402
 from tags import KDC1_NAME, KDC2_NAME  # noqa: E402
 from groups import build_groups  # noqa: E402
 from build_years import MIN_YEAR_LOANS, hist_years  # noqa: E402
+from build_perlib import LIBS_MIN, window_years  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[1]
@@ -180,9 +182,47 @@ def write_years(yr: pd.DataFrame) -> list[int]:
     return years
 
 
+def load_perlib(src: Path, books: pd.DataFrame) -> pd.DataFrame | None:
+    """도서관당 대출(build_perlib.py, PLAN 11절). 사이트 수록 도서·노출 나이만."""
+    p = src / "perlib_ranks.parquet"
+    if not p.exists():
+        return None
+    pl = pd.read_parquet(p)
+    pl = pl[pl.isbn13.isin(books.index) & pl.age.isin(SHOW_AGES)]
+    return pl if len(pl) else None
+
+
+def write_perlib(pl: pd.DataFrame) -> dict:
+    """public/data/perlib/{나이}.json — 도서관당 대출 순위. 반환: meta 용 요약.
+    years    대출을 합친 연도들(오름차순)
+    min_libs 묶음별 소장 도서관 수 하한 {book, set}
+    book·set 행 [isbn, 창의 대출 합, 연수, 소장 도서관 수, 100곳당 연 대출, 대출순] — 순위순(100곳당 연 대출 내림).
+             book = 낱권, set = 전집(한 질당 한 권). 카드 정보는 나이 색인(index/{나이}.json)에서 가져온다."""
+    out = PUB / "perlib"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    years = window_years(pl)
+    total, counts = 0, {}
+    for a, g in pl.groupby("age"):
+        doc = {"age": int(a), "years": years, "min_libs": {}}
+        for grp in ("book", "set"):
+            z = g[g.grp == grp].sort_values("rank")
+            doc["min_libs"][grp] = int(z.floor.iloc[0]) if len(z) else LIBS_MIN
+            doc[grp] = [[i, int(round(ln)), int(y), int(lb), round(float(r), 1), int(k)]
+                        for i, ln, y, lb, r, k in zip(z.isbn13, z.loan3, z.years, z.libs, z.per100, z.loan_rank)]
+        counts[int(a)] = [len(doc["book"]), len(doc["set"])]
+        p = out / f"{int(a)}.json"
+        p.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")
+        total += p.stat().st_size
+    print(f"도서관당 대출: {years[0]}~{years[-1]}년 × 나이 {len(counts)}개 → {total / 1024:.0f} KB · [낱권, 전집] "
+          + ", ".join(f"{a}세 {c}" for a, c in counts.items()))
+    return {"years": years, "min_libs": LIBS_MIN}
+
+
 def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame, extra: set[str] | None = None) -> tuple[dict, dict]:
     """나이 a 의 얇은 색인(후보 전체 + 인기순 상위)과 facet 요약.
-    extra: 연도별 대출순에 나오는 책. 색인에 없으면 인기순위 0(전 기간 '많이 빌린 책'에는 안 나옴)으로 덧붙인다.
+    extra: 연도별 대출순·도서관당 대출에 나오는 책. 색인에 없으면 인기순위 0(전 기간 '많이 빌린 책'에는 안 나옴)으로 덧붙인다.
     행: [isbn, 제목, 저자, 출판사idx, 연도, 표지[prefix,rest], 밴드, 중앙나이, 형태코드, 그림책, kdc2, 형태idx,
          성격비트, 추천도, 인기순위, 위치, 대출, 시리즈idx, 비중13자, 자격, 주제비트, 작가idx, 판idx]
     시리즈·작가 idx 는 이 색인의 series/authors(이름) 목록 위치, 판idx 가 같은 행은 같은 책의 다른 판.
@@ -315,9 +355,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sample", action="store_true")
     ap.add_argument("--top", type=int, default=TOP_N)
-    ap.add_argument("--years-only", action="store_true",
-                    help="연도별 대출순만 반영: 나이 색인(index)·연도 파일(year)·meta 의 years/build 만 다시 쓰고 "
-                         "상세 조각·소장 파일·검색 색인·첫 화면 카드는 건드리지 않는다")
+    ap.add_argument("--years-only", "--perlib-only", dest="years_only", action="store_true",
+                    help="연도별 대출순·도서관당 대출만 반영: 나이 색인(index)·연도 파일(year)·도서관당 파일(perlib)·"
+                         "meta 의 years/perlib/build 만 다시 쓰고 상세 조각·소장 파일·검색 색인·첫 화면 카드는 건드리지 않는다")
     args = ap.parse_args()
     src = ROOT / "data" / ("sample" if args.sample else "processed")
     books = pd.read_parquet(src / "books_metrics.parquet").set_index("isbn13", drop=False)
@@ -366,9 +406,11 @@ def main():
     (PUB / "index").mkdir(parents=True, exist_ok=True)
     used: set[str] = set()
     yr = load_year_ranks(src, books)
+    pl = load_perlib(src, books)
 
     def write_index(a: int, r: pd.DataFrame) -> tuple[dict, dict]:
-        index, facets = write_age_index(a, r, books, set(yr[yr.age == a].isbn13) if yr is not None else None)
+        extra = (set(yr[yr.age == a].isbn13) if yr is not None else set()) | (set(pl[pl.age == a].isbn13) if pl is not None else set())
+        index, facets = write_age_index(a, r, books, extra or None)
         pp = PUB / "index" / f"{a}.json"
         pp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(f"  {a}세 색인 {index['n']:,}행 (후보 {index['n_eligible']:,}) {pp.stat().st_size / 1024 / 1024:.1f} MB, "
@@ -382,9 +424,10 @@ def main():
         meta = json.loads(meta_p.read_text(encoding="utf-8"))
         meta["years"] = write_years(yr) if yr is not None else []
         meta["year_min_loans"] = MIN_YEAR_LOANS
+        meta["perlib"] = write_perlib(pl) if pl is not None else None
         meta["build"] = dt.datetime.now().strftime("%Y%m%d%H%M%S")      # 색인이 바뀌었으니 캐시 버전을 올린다
         meta_p.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"export(연도별만) → 연도 {meta['years']}, build {meta['build']}")
+        print(f"export(연도별·도서관당만) → 연도 {meta['years']}, 도서관당 {meta['perlib']}, build {meta['build']}")
         return
     for a in show:
         r = ranks[ranks.age == a]
@@ -434,6 +477,7 @@ def main():
             "n_keywords": int((books["kw"] != "").sum()),
             "forms": FORMS, "teaser_n": TEASER_N,
             "years": write_years(yr) if yr is not None else [], "year_min_loans": MIN_YEAR_LOANS,
+            "perlib": write_perlib(pl) if pl is not None else None,
             "holdings": holdings_meta, "region_names": REGION_NAMES,
             "source": "도서관정보나루(data4library.kr) 공공도서관 대출 데이터, 전국, 2014~"}
     (SITE_DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")

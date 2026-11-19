@@ -37,8 +37,18 @@
       return `<span class="yh${y === year ? ' on' : ''}${r ? (r >= 1000 ? ' w4' : '') : ' out'}" title="${y}년 ${r ? `${r}위` : '순위 밖 (그 해 대출 30건 미만 또는 1,000위 밖)'}"><i>${y}</i>${r ? `${r}위` : '–'}</span>`;
     }).join('')}</div>`;
   }
+  // 도서관당 대출 줄: b.plr 100곳당 연 대출, b.plb 소장 도서관 수, b.pll 창의 대출 합, b.ply 연수(창 안에서 이 책이 있던 해 수),
+  // b.plk 대출순(같은 창), b.plo 순위. 필터·토글로 목록 위치(#)가 순위와 달라지면 "전체 N위"를 함께 적는다
+  function perlibLine(b, pos, ageLabel, plYears, pct) {
+    const ys = plYears.slice(-Math.max(1, b.ply || plYears.length));
+    const span = ys.length > 1 ? `${ys[0]}~${ys[ys.length - 1]}년` : `${ys[0] ?? ''}년`;
+    const rate = Number(b.plr).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const tip = `${span} ${ageLabel} 대출 ${Number(b.pll).toLocaleString()}건 ÷ (소장 도서관 ${Number(b.plb).toLocaleString()}곳 × ${ys.length}년) × 100`;
+    return `#${pos} · 도서관 100곳당 연 <b title="${esc(tip)}">${rate}회</b>${b.plo !== pos ? ` · 전체 ${b.plo}위` : ''} · 소장 ${Number(b.plb).toLocaleString()}곳`
+      + ` · ${span} ${esc(ageLabel)} 대출 ${Number(b.pll).toLocaleString()}건(대출순 ${Number(b.plk).toLocaleString()}위) · 연령 적합도 ${pct}% (${centLabel(pct)})`;
+  }
   window.AgeShelfCard = function (b, opts) {
-    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit', more = null, year = 0, histYears = [] } = opts;
+    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit', more = null, year = 0, histYears = [], plYears = [] } = opts;
     const prof = window.AgeShelfProf(b.prof);
     const max = Math.max(...prof, 1);
     const bars = profAges.map((a, k) => `<i class="${a === age ? 'on' : ''}" style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
@@ -56,6 +66,8 @@
       <div><a href="${href}">${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</a>${window.AgeShelfActs(b.i, b.t)}</div>
       <a href="${href}"><div class="rank">${year   // 연도별 대출순: 그 해 대출 건수와 전년 대비 순위 변동
         ? `#${rank} · ${year}년 ${esc(ageLabel)} 대출 <b>${Number(b.yl).toLocaleString()}건</b>${yearChange(b, year, rank, histYears)} · 연령 적합도 ${pct}% (${centLabel(pct)})`
+        : sortBy === 'perlib' && b.plb   // 도서관당 대출: 소장 도서관 100곳당 연 대출
+        ? perlibLine(b, rank, ageLabel, plYears, pct)
         : sortBy === 'cent'   // 연령 적합도순: 정렬 기준인 적합도를 앞에 굵게
         ? `#${rank} · 연령 적합도 <b>${pct}%</b> (${centLabel(pct)}) · 추천도 ${Number(b.fit).toFixed(1)} · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건`
         : `#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})`}</div>

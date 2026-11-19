@@ -129,17 +129,30 @@ def alltime_gate(bm: pd.DataFrame) -> pd.Series:
     return gate_mask(L, ages)
 
 
-def build(long: pd.DataFrame, bm: pd.DataFrame, cent: pd.Series, wk: dict, cells: pd.DataFrame | None = None,
-          verbose: bool = True) -> pd.DataFrame:
+def prep_long(long: pd.DataFrame) -> pd.DataFrame:
+    """loans_long_years 원자료 → age·loan_count 숫자형, year 열 추가."""
     long = long.copy()
     long["age"] = long["age"].astype(int)
     long["loan_count"] = pd.to_numeric(long["loan_count"], errors="coerce").fillna(0)
     long["year"] = long["slice"].str[1:].astype(int)
+    return long
+
+
+def year_cutoffs(cells: pd.DataFrame | None, year: int) -> dict[int, float]:
+    """그 해 나이별 컷오프(5,000번째 행의 대출). 상한에 안 걸린 칸은 0."""
+    if cells is None:
+        return {}
+    cy = cells[cells["slice"] == f"y{year}"]
+    return {int(r.age): float(r.cutoff) if bool(r.capped) else 0.0 for r in cy.itertuples()}
+
+
+def clean_years(long: pd.DataFrame, bm: pd.DataFrame, cells: pd.DataFrame | None = None, verbose: bool = True):
+    """연도마다 (year, ages, L, Lc) 를 낸다. long 은 prep_long 을 거친 것.
+    L 은 isbn × 나이 원자료, Lc 는 잡음 제거(게이트 + 비례 차감)와 급등 제외까지 끝낸 값(소수, 수록 하한 적용 전).
+    연도별 대출순(build)과 도서관당 대출(build_perlib.py)이 같은 값을 쓰도록 한 곳에서 계산한다."""
     gate_all = alltime_gate(bm)
-    in_site = set(bm.index[bm.total_loans >= SITE_MIN_TOTAL])
     pool_med = pooled_older_median(long)
     lone = lone_cells(long, bm)
-    out = []
     for year, ly in long.groupby("year"):
         L, ages = year_matrix(ly)
         ages = [a for a in ages if a not in DROP_AGES]
@@ -147,11 +160,7 @@ def build(long: pd.DataFrame, bm: pd.DataFrame, cent: pd.Series, wk: dict, cells
         known = L.index.isin(gate_all.index)
         gate = gate_all.reindex(L.index).fillna(False).astype(bool) | (gate_mask(L, ages) & ~known)
         Lc, _, f = denoise(L, L.copy(), ages, verbose=False, gate=gate)
-        cutoff = {}
-        if cells is not None:
-            cy = cells[cells["slice"] == f"y{year}"]
-            cutoff = {int(r.age): float(r.cutoff) if bool(r.capped) else 0.0 for r in cy.itertuples()}
-        burst = burst_mask(L, ages, cutoff, pool_med, lone)
+        burst = burst_mask(L, ages, year_cutoffs(cells, year), pool_med, lone)
         names = ly.drop_duplicates("isbn13").set_index("isbn13")["bookname"] if "bookname" in ly.columns else pd.Series(dtype=str)
         if verbose:
             print(f"[{year}] 도서 {len(L):,}권 · 게이트 {int(gate.sum()):,}권(전 기간 자료에 없어 그 해 자료로 판정 {int((gate & ~known).sum()):,}) · "
@@ -162,6 +171,15 @@ def build(long: pd.DataFrame, bm: pd.DataFrame, cent: pd.Series, wk: dict, cells
                 print(f"   {a}세 급등 제외 {len(hit)}권: " + ", ".join(f"{str(names.get(i, i)).strip()[:16]} {int(L.at[i, a])}건"
                                                                    for i in L.loc[hit, a].sort_values(ascending=False).index[:8]))
             Lc.loc[burst[a], a] = 0.0
+        yield int(year), ages, L, Lc
+
+
+def build(long: pd.DataFrame, bm: pd.DataFrame, cent: pd.Series, wk: dict, cells: pd.DataFrame | None = None,
+          verbose: bool = True) -> pd.DataFrame:
+    long = prep_long(long)
+    in_site = set(bm.index[bm.total_loans >= SITE_MIN_TOTAL])
+    out = []
+    for year, ages, L, Lc in clean_years(long, bm, cells, verbose):
         for a in ages:
             d = pd.DataFrame({"isbn13": L.index, "loan": Lc[a].round(0).astype(int).values, "loan_raw": L[a].astype(int).values})
             d = d[d.loan >= MIN_YEAR_LOANS].sort_values(["loan", "loan_raw", "isbn13"], ascending=[False, False, True]).reset_index(drop=True)
