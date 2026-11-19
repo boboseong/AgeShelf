@@ -117,17 +117,25 @@ def bounds(long: pd.DataFrame, cells: pd.DataFrame | None):
     return L, U, observed, ages
 
 
-def denoise(L: pd.DataFrame, U: pd.DataFrame, ages: list[int], verbose: bool = True):
-    """1~3세 코호트에 섞인 초등 독자(생년 오등록·기관 대출) 배경을 뺀다."""
+def gate_mask(L: pd.DataFrame, ages: list[int]) -> pd.Series:
+    """'명백한 초등 책': 4~13세 대출 중 8~13세 비중이 GATE_OLDER_SHARE 이상이고, 8~13세 대출이 (8~13세에 관측된 책의) 중앙값보다 큰 책."""
+    ref = [a for a in NOISE_REF if a in ages]
+    N = L[ref].sum(axis=1)
+    mid = [a for a in ages if 4 <= a <= 7]
+    older_share = N / (N + L[mid].sum(axis=1) + 1e-9)
+    seen_older = N[N > 0]
+    return (older_share > GATE_OLDER_SHARE) & (N > (seen_older.quantile(0.5) if len(seen_older) else 0))
+
+
+def denoise(L: pd.DataFrame, U: pd.DataFrame, ages: list[int], verbose: bool = True, gate: pd.Series | None = None):
+    """1~3세 코호트에 섞인 초등 독자(생년 오등록·기관 대출) 배경을 뺀다.
+    gate 를 주면 그 책들을 '명백한 초등 책'으로 쓴다(연도별 순위: 나이당 5,000행뿐이라 전 기간 자료로 정한 게이트를 넘겨받음)."""
     ref = [a for a in NOISE_REF if a in ages]
     if not ref:
         return L, U, {}
     N = L[ref].sum(axis=1)
     p_noise = N / N.sum()
-    mid = [a for a in ages if 4 <= a <= 7]
-    older_share = N / (N + L[mid].sum(axis=1) + 1e-9)
-    seen_older = N[N > 0]
-    gated = (older_share > GATE_OLDER_SHARE) & (N > (seen_older.quantile(0.5) if len(seen_older) else 0))
+    gated = gate_mask(L, ages) if gate is None else gate.reindex(L.index).fillna(False).astype(bool)
     Lc, Uc, f = L.copy(), U.copy(), {}
     for a in DENOISE_AGES:
         if a not in ages:

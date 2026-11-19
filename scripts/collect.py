@@ -4,6 +4,7 @@
   python scripts/collect.py --slices allonly --region        # 전체기간, 0~13세, 17개 지역 분할 (238회) ← 기본 권장
   python scripts/collect.py --slices allonly --region --gender   # + 성별 분할 (714회)
   python scripts/collect.py --slices all                      # 연도별·최근12개월 슬라이스(무분할, 추이용)
+  python scripts/collect.py --years 2022-2025                 # 지정 연도만, 0~13세 무분할 (56회) → loans_long_years.parquet
   python scripts/collect.py --no-kids-filter --ages 0-3       # addCode 없이(오염 비교용)
   python scripts/collect.py --parents                         # 30·40대 카드로 빌린 아동서(보조 랭킹)
 
@@ -36,6 +37,9 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "processed"
 CAP = 5000
 DATA_START = "2014-01-01"
+# 대출 자료는 실제로 2016-01-01 부터 있다 (2026-11-19 실측). 그보다 앞에서 끝나는 기간(예: 2015-01-01~2015-12-31)을 주면
+# API 가 날짜 조건을 버리고 '전체 기간' 결과를 그대로 돌려준다 → 2014·2015년 연도별 자료는 만들 수 없다.
+FIRST_YEAR = 2016
 KEEP = ["ranking", "isbn13", "bookname", "authors", "publisher", "publication_year",
         "addition_symbol", "vol", "class_no", "class_nm", "bookImageURL", "bookDtlUrl", "loan_count"]
 REGIONS = ["11", "21", "22", "23", "24", "25", "26", "29", "31", "32", "33", "34", "35", "36", "37", "38", "39"]
@@ -47,12 +51,24 @@ def yesterday() -> str:
     return (dt.date.today() - dt.timedelta(days=1)).isoformat()
 
 
-def slices(kind: str) -> dict[str, tuple[str, str]]:
+def parse_years(spec: str) -> list[int]:
+    """'2022-2025' 또는 '2023,2025'."""
+    if "-" in spec:
+        a, b = spec.split("-")
+        return list(range(int(a), int(b) + 1))
+    return [int(x) for x in spec.split(",") if x.strip()]
+
+
+def slices(kind: str, years: list[int] | None = None) -> dict[str, tuple[str, str]]:
     end = yesterday()
+    if years:   # 지정한 연도만 (연도별 대출순, PLAN 10절)
+        if min(years) < FIRST_YEAR:
+            raise SystemExit(f"--years: {FIRST_YEAR}년 이전은 연도별 자료가 없습니다 (API 가 전체 기간 결과를 돌려줌). 받은 값 {min(years)}~{max(years)}")
+        return {f"y{y}": (f"{y}-01-01", min(f"{y}-12-31", end)) for y in years}
     s = {"all": (DATA_START, end),
          "last12m": ((dt.date.today() - dt.timedelta(days=365)).isoformat(), end)}
     if kind == "all":
-        for year in range(2014, dt.date.today().year + 1):
+        for year in range(FIRST_YEAR, dt.date.today().year + 1):
             s[f"y{year}"] = (f"{year}-01-01", min(f"{year}-12-31", end))
     if kind == "allonly":
         s = {"all": s["all"]}
@@ -96,6 +112,8 @@ def fetch_cell(slice_name, start, end, age_kw, add_code, region, gender, kcell, 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--slices", choices=["basic", "all", "allonly", "last12m"], default="basic")
+    ap.add_argument("--years", default=None,
+                    help="이 연도들만 수집(--slices 무시). 예: 2022-2025 → y2022…y2025, 기본 출력 loans_long_years.parquet")
     ap.add_argument("--ages", default="0-13", help="초등까지 수집해야 lift 분모가 맞음")
     ap.add_argument("--page-size", type=int, default=5000, help="한 번에 5,000행 가능(검증됨)")
     ap.add_argument("--region", action="store_true", help="지역 17개 분할(합산 대상)")
@@ -125,7 +143,10 @@ def main():
         kcells = ["*"]
 
     frames, cells = [], []
-    for name, (start, end) in slices(args.slices).items():
+    years = parse_years(args.years) if args.years else None
+    if years and not args.tag:
+        args.tag = "years"
+    for name, (start, end) in slices(args.slices, years).items():
         print(f"[{name}] {start} ~ {end}", flush=True)
         for a in ages:
             for r in regions:

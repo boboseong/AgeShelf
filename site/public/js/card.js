@@ -17,8 +17,28 @@
       pic: r[9], k2: r[10], fm: idx.forms[r[11]] || '', flb: r[12], fit: r[13], pr: r[14], ce: r[15], ln: r[16], sk: r[17] ?? -1, prof: r[18], elig: r[19], tpb: r[20] || 0,
       ai: r[21] ?? -1, w: r[22] ?? -1, an: r[21] >= 0 ? (idx.authors?.[r[21]] ?? '') : '', sn: r[17] >= 0 ? (idx.series?.[r[17]] ?? '') : '' };
   };
+  // 연도별 대출순의 전년 대비 순위 변동. b.yrk 그 해 순위(0 이면 순위 없는 행), b.yp 전년 순위(0 이면 전년 순위 밖)
+  // 필터·토글로 목록 위치(#)가 그 해 순위와 달라지면 "전체 9위"를 함께 적어 변동이 어느 순위 기준인지 보이게 한다
+  // hy: 순위 이력이 있는 연도들. 전년이 그 안에 없으면(자료의 첫 해) 변동 없이 순위만 적는다
+  function yearChange(b, year, pos, hy) {
+    if (!b.yrk) return '';
+    const whole = b.yrk !== pos ? `전체 ${b.yrk}위 ` : '';
+    if (!hy.includes(year - 1)) return whole ? ` · ${whole.trim()}` : '';
+    if (!b.yp) return ` · ${whole}<span class="chg new" title="${year - 1}년에는 순위 밖 (그 해 대출 30건 미만 또는 1,000위 밖)">새로 진입</span>`;
+    const d = b.yp - b.yrk, tip = `${year - 1}년 ${b.yp}위 → ${year}년 ${b.yrk}위`;
+    return ` · ${whole}<span class="chg ${d > 0 ? 'up' : d < 0 ? 'down' : 'same'}" title="${tip}">${d > 0 ? `▲${d}` : d < 0 ? `▼${-d}` : '–'}</span>`;
+  }
+  // 연도별 순위 줄: 이 책(다른 판 포함)의 해마다 순위. b.yh 는 hy 와 같은 순서의 순위 배열(0 = 그 해 순위 밖), 보고 있는 해는 강조
+  function yearHist(b, year, hy) {
+    if (!b.yrk || !b.yh) return '';
+    // 한 줄에 최대 6칸(연도가 더 많으면 다음 줄로). 네 자리 순위(1000위)는 좁은 카드에서 칸을 넘지 않게 작은 글씨(w4)
+    return `<div class="yhist" role="group" aria-label="연도별 순위" style="--yn:${Math.min(hy.length, 6)}">${hy.map((y, k) => {
+      const r = b.yh[k];
+      return `<span class="yh${y === year ? ' on' : ''}${r ? (r >= 1000 ? ' w4' : '') : ' out'}" title="${y}년 ${r ? `${r}위` : '순위 밖 (그 해 대출 30건 미만 또는 1,000위 밖)'}"><i>${y}</i>${r ? `${r}위` : '–'}</span>`;
+    }).join('')}</div>`;
+  }
   window.AgeShelfCard = function (b, opts) {
-    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit', more = null } = opts;
+    const { rank, age, ageLabel, profAges, base = '', kdcNames = {}, flagTags = [], topics = [], sortBy = 'fit', more = null, year = 0, histYears = [] } = opts;
     const prof = window.AgeShelfProf(b.prof);
     const max = Math.max(...prof, 1);
     const bars = profAges.map((a, k) => `<i class="${a === age ? 'on' : ''}" style="height:${Math.max(6, Math.round(100 * (prof[k] || 0) / max))}%" title="${a}세 ${prof[k] || 0}%"></i>`).join('');
@@ -34,11 +54,13 @@
     const href = `${base}/b/?isbn=${esc(b.i)}`;
     return `<div class="card">
       <div><a href="${href}">${b.cv ? `<img class="cover" src="${esc(b.cv)}" alt="" loading="lazy">` : '<div class="cover"></div>'}</a>${window.AgeShelfActs(b.i, b.t)}</div>
-      <a href="${href}"><div class="rank">${sortBy === 'cent'   // 연령 적합도순: 정렬 기준인 적합도를 앞에 굵게
+      <a href="${href}"><div class="rank">${year   // 연도별 대출순: 그 해 대출 건수와 전년 대비 순위 변동
+        ? `#${rank} · ${year}년 ${esc(ageLabel)} 대출 <b>${Number(b.yl).toLocaleString()}건</b>${yearChange(b, year, rank, histYears)} · 연령 적합도 ${pct}% (${centLabel(pct)})`
+        : sortBy === 'cent'   // 연령 적합도순: 정렬 기준인 적합도를 앞에 굵게
         ? `#${rank} · 연령 적합도 <b>${pct}%</b> (${centLabel(pct)}) · 추천도 ${Number(b.fit).toFixed(1)} · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건`
         : `#${rank} · 추천도 <b>${Number(b.fit).toFixed(1)}</b> · ${esc(ageLabel)} 대출 ${Number(b.ln).toLocaleString()}건 · 연령 적합도 ${pct}% (${centLabel(pct)})`}</div>
-      <div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>
-      <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.med).toFixed(1)}세</span>${b.sp >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.sh && b.sh !== '대칭' ? `<span class="badge">${esc(b.sh)}</span>` : ''}${b.pic ? '<span class="badge pic">그림책</span>' : ''}${chips.join('')}</div>
+      ${year ? yearHist(b, year, histYears) : ''}<div class="title">${esc(b.t)}</div><div class="meta">${esc(b.au)} · ${esc(b.pu)} · ${esc(b.yr)}</div>
+      <div class="badges"><span class="badge band">추천 ${esc(b.band)}</span><span class="badge">중앙 ${Number(b.med).toFixed(1)}세</span>${b.sp >= 2 ? '<span class="badge">이 나이에 집중</span>' : ''}${b.sh && b.sh !== '대칭' ? `<span class="badge">${esc(b.sh)}</span>` : ''}${b.pic ? '<span class="badge pic">그림책</span>' : ''}${year && Number(b.yr) === year ? `<span class="badge new" title="${year}년에 나온 책이라 그 해 대출이 일부만 잡혔습니다">${year}년 신간</span>` : ''}${chips.join('')}</div>
       <div class="bars">${bars}</div><div class="axis">${axis}</div></a>${groupLinks(b, more)}</div>`;
   };
   // '작가당 1권'·'시리즈당 1권'으로 숨긴 책이 있으면 대표 카드에 "같은 작가 책 +N권" (누르면 그 작가·시리즈만 보기)

@@ -50,6 +50,20 @@ const current = Astro.url.pathname;
     .badge { font-size:11px; padding:2px 7px; border-radius:999px; background:#f1eee7; color:#4d493f; }
     .badge.band { background:#e6f1ec; color:var(--accent2); font-weight:600; }
     .badge.pic { background:#fdeadb; color:#9a4a12; }
+    .badge.new { background:#eef0fb; color:#3d4a9a; }
+    /* 연도별 대출순: 전년 대비 순위 변동 */
+    .chg { font-weight:600; white-space:nowrap; }
+    .chg.up { color:#b3261e; }
+    .chg.down { color:#2a5db0; }
+    .chg.new { color:var(--accent2); }
+    /* 연도별 대출순: 책마다 해마다 순위 (보고 있는 해 강조, – 는 순위 밖) */
+    /* 같은 폭 칸(위 연도, 아래 순위)을 한 줄에 --yn 개(최대 6)씩, 오래된 해부터 — 좁은 카드에서도 칸이 넘치지 않게 */
+    .yhist { display:grid; grid-template-columns:repeat(var(--yn, 6), minmax(0,1fr)); gap:3px; max-width:300px; margin:5px 0 4px; font-size:11px; line-height:1.35; text-align:center; }
+    .yhist .yh { padding:1px 0 2px; border:1px solid var(--line); border-radius:6px; background:#fff; color:var(--fg); white-space:nowrap; overflow:hidden; }
+    .yhist .yh i { display:block; font-style:normal; font-size:10px; line-height:1.35; color:var(--muted); }
+    .yhist .yh.w4 { font-size:9px; line-height:1.65; }
+    .yhist .yh.on { border-color:var(--fg); font-weight:600; }
+    .yhist .yh.out { color:var(--muted); background:#f7f5f0; }
     /* 상세 페이지: 표(13칸)가 그리드 열을 넓히지 못하게 min-width:0, 좁은 화면은 한 열로 */
     .detail { grid-template-columns:120px minmax(0,1fr); max-width:760px; }
     .detail > div { min-width:0; }

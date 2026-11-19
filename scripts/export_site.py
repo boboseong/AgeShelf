@@ -26,6 +26,7 @@ from build_metrics import CENT_MIN, GAMMA, MIN_LOANS_AT_AGE, W_CENT, W_POP  # no
 from topics import TOPIC_NAMES  # noqa: E402
 from tags import KDC1_NAME, KDC2_NAME  # noqa: E402
 from groups import build_groups  # noqa: E402
+from build_years import MIN_YEAR_LOANS, hist_years  # noqa: E402
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[1]
@@ -142,8 +143,46 @@ def write_shards(books: pd.DataFrame, out_dir: Path, nshards: int = 1000) -> Non
     print(f"book shards: {len(books):,} books → {nshards} files, {total / 1024 / 1024:.1f} MB")
 
 
-def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple[dict, dict]:
+def load_year_ranks(src: Path, books: pd.DataFrame) -> pd.DataFrame | None:
+    """연도별 대출순(build_years.py, PLAN 10절). 수집한 모든 연도(전년 자료가 없는 첫 해는 변동 없이 순위만) · 사이트 수록 도서·노출 나이만."""
+    p = src / "year_ranks.parquet"
+    if not p.exists():
+        return None
+    yr = pd.read_parquet(p)
+    yr = yr[yr.isbn13.isin(books.index) & yr.age.isin(SHOW_AGES)]
+    return yr if len(yr) else None
+
+
+def write_years(yr: pd.DataFrame) -> list[int]:
+    """public/data/year/{연도}/{나이}.json — 그 해 대출순.
+    hy   순위 이력의 연도 (오름차순, 이 파일의 연도 포함)
+    rows 순위가 있는 행 [isbn, 그 해 대출, hy 의 연도별 순위…(순위 밖이면 0)] — 같은 책 다른 판은 한 책으로 이어 붙인 순위.
+         순위가 없는 행 [isbn, 그 해 대출] — 기본 화면에서 빠지는 '다른 나이 책', 같은 책의 뒤 순서 판.
+    카드 정보는 나이 색인(index/{나이}.json)에서 가져오므로 write_age_index 가 이 책들을 색인에 넣어 둔다."""
+    out = PUB / "year"
+    if out.exists():
+        shutil.rmtree(out)
+    hy = hist_years(yr)
+    hcols = [f"rank_{y}" for y in hy]
+    total = 0
+    for (y, a), g in yr.groupby(["year", "age"]):
+        g = g.sort_values("order")
+        rows = [[i, int(ln)] + ([int(v) if pd.notna(v) else 0 for v in h] if pd.notna(rk) else [])
+                for i, ln, rk, h in zip(g.isbn13, g.loan, g["rank"], g[hcols].values)]
+        d = out / str(int(y))
+        d.mkdir(parents=True, exist_ok=True)
+        p = d / f"{int(a)}.json"
+        p.write_text(json.dumps({"year": int(y), "age": int(a), "n": int(g["rank"].notna().sum()), "hy": hy, "rows": rows},
+                                separators=(",", ":")), encoding="utf-8")
+        total += p.stat().st_size
+    years = sorted((int(y) for y in yr.year.unique()), reverse=True)
+    print(f"연도별 대출순: {years} × 나이 {yr.age.nunique()}개 → {total / 1024:.0f} KB")
+    return years
+
+
+def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame, extra: set[str] | None = None) -> tuple[dict, dict]:
     """나이 a 의 얇은 색인(후보 전체 + 인기순 상위)과 facet 요약.
+    extra: 연도별 대출순에 나오는 책. 색인에 없으면 인기순위 0(전 기간 '많이 빌린 책'에는 안 나옴)으로 덧붙인다.
     행: [isbn, 제목, 저자, 출판사idx, 연도, 표지[prefix,rest], 밴드, 중앙나이, 형태코드, 그림책, kdc2, 형태idx,
          성격비트, 추천도, 인기순위, 위치, 대출, 시리즈idx, 비중13자, 자격, 주제비트, 작가idx, 판idx]
     시리즈·작가 idx 는 이 색인의 series/authors(이름) 목록 위치, 판idx 가 같은 행은 같은 책의 다른 판.
@@ -151,6 +190,9 @@ def write_age_index(a: int, ranks_a: pd.DataFrame, books: pd.DataFrame) -> tuple
     el = ranks_a[ranks_a.fit_rank.notna()].sort_values("fit_rank")
     pop_extra = ranks_a[ranks_a.fit_rank.isna() & ranks_a.pop_rank.notna()].nsmallest(POP_EXTRA, "pop_rank")
     src = pd.concat([el, pop_extra], ignore_index=True)
+    if extra:
+        add = ranks_a[ranks_a.isbn13.isin(extra - set(src.isbn13))].assign(pop_rank=float("nan"))
+        src = pd.concat([src, add], ignore_index=True)
     pubs: dict[str, int] = {}
     pub_names: list[list[str]] = []
     grp = books.loc[src.isbn13, ["ak", "an", "sk", "sn", "wk"]]
@@ -273,6 +315,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sample", action="store_true")
     ap.add_argument("--top", type=int, default=TOP_N)
+    ap.add_argument("--years-only", action="store_true",
+                    help="연도별 대출순만 반영: 나이 색인(index)·연도 파일(year)·meta 의 years/build 만 다시 쓰고 "
+                         "상세 조각·소장 파일·검색 색인·첫 화면 카드는 건드리지 않는다")
     args = ap.parse_args()
     src = ROOT / "data" / ("sample" if args.sample else "processed")
     books = pd.read_parquet(src / "books_metrics.parquet").set_index("isbn13", drop=False)
@@ -281,11 +326,13 @@ def main():
     ranks = pd.read_parquet(src / "age_ranks.parquet")
     ranks = ranks[ranks.isbn13.isin(books.index)]
     print(f"수록 하한 총 대출 {SITE_MIN_TOTAL}건: {n_all:,} → {len(books):,}권")
-    # 이전 빌드의 조각·소장 파일이 남지 않도록 비운다
-    for d in (PUB / "books", PUB / "libs"):
-        if d.exists():
-            shutil.rmtree(d)
-    holdings_meta = export_holdings(src, set(books.index))
+    holdings_meta = {}
+    if not args.years_only:
+        # 이전 빌드의 조각·소장 파일이 남지 않도록 비운다
+        for d in (PUB / "books", PUB / "libs"):
+            if d.exists():
+                shutil.rmtree(d)
+        holdings_meta = export_holdings(src, set(books.index))
     tags_p = src / "book_tags.parquet"
     if tags_p.exists():
         tags = pd.read_parquet(tags_p).set_index("isbn13")
@@ -318,6 +365,27 @@ def main():
     (SITE_DATA / "ages").mkdir(parents=True, exist_ok=True)
     (PUB / "index").mkdir(parents=True, exist_ok=True)
     used: set[str] = set()
+    yr = load_year_ranks(src, books)
+
+    def write_index(a: int, r: pd.DataFrame) -> tuple[dict, dict]:
+        index, facets = write_age_index(a, r, books, set(yr[yr.age == a].isbn13) if yr is not None else None)
+        pp = PUB / "index" / f"{a}.json"
+        pp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"  {a}세 색인 {index['n']:,}행 (후보 {index['n_eligible']:,}) {pp.stat().st_size / 1024 / 1024:.1f} MB, "
+              f"facet kdc2 {len(facets['kdc2'])} / 출판사 {len(facets['pub'])}")
+        return index, facets
+
+    if args.years_only:
+        for a in show:
+            write_index(a, ranks[ranks.age == a])
+        meta_p = SITE_DATA / "meta.json"
+        meta = json.loads(meta_p.read_text(encoding="utf-8"))
+        meta["years"] = write_years(yr) if yr is not None else []
+        meta["year_min_loans"] = MIN_YEAR_LOANS
+        meta["build"] = dt.datetime.now().strftime("%Y%m%d%H%M%S")      # 색인이 바뀌었으니 캐시 버전을 올린다
+        meta_p.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"export(연도별만) → 연도 {meta['years']}, build {meta['build']}")
+        return
     for a in show:
         r = ranks[ranks.age == a]
         pop = dedupe_editions(r[r.observed].nsmallest(args.top * 3, "pop_rank"), books.wk, args.top)
@@ -331,14 +399,10 @@ def main():
                 c["fit"] = float(x.fit_score); c["observed"] = bool(x.observed); out.append(c); used.add(x.isbn13)
             return out
         fit_rows, pop_rows = rows(fit), rows(pop)          # used(상세 페이지 대상)은 300권 기준으로 유지
-        index, facets = write_age_index(a, r, books)
+        index, facets = write_index(a, r)
         payload = {"age": a, "popular": pop_rows[:TEASER_N], "fit": fit_rows[:TEASER_N], "facets": facets,
                    "n_eligible": index["n_eligible"], "n_index": index["n"]}
         (SITE_DATA / "ages" / f"{a}.json").write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
-        pp = PUB / "index" / f"{a}.json"
-        pp.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-        print(f"  {a}세 색인 {index['n']:,}행 (후보 {index['n_eligible']:,}) {pp.stat().st_size / 1024 / 1024:.1f} MB, "
-              f"facet kdc2 {len(facets['kdc2'])} / 출판사 {len(facets['pub'])}")
 
     detail = {i: book_card(books.loc[i]) for i in sorted(used)}
     (SITE_DATA / "books.json").write_text(json.dumps(detail, ensure_ascii=False), encoding="utf-8")
@@ -369,6 +433,7 @@ def main():
             "kdc2_names": KDC2_NAME, "kdc1_names": KDC1_NAME, "flag_tags": FLAG_TAGS, "topics": TOPIC_NAMES,
             "n_keywords": int((books["kw"] != "").sum()),
             "forms": FORMS, "teaser_n": TEASER_N,
+            "years": write_years(yr) if yr is not None else [], "year_min_loans": MIN_YEAR_LOANS,
             "holdings": holdings_meta, "region_names": REGION_NAMES,
             "source": "도서관정보나루(data4library.kr) 공공도서관 대출 데이터, 전국, 2014~"}
     (SITE_DATA / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")

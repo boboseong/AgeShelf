@@ -23,4 +23,24 @@ for a in sorted(ranks.age.unique()):
                            "bookname": "제목", "authors": "저자", "publisher": "출판사",
                            "publication_year": "출판년", "band": "추천연령", "peak_age": "최다선택나이", "shape": "분포", "is_picture": "그림책",
                            "total_loans": "총대출"}).to_csv(OUT / f"age{a}_{kind}.csv", index=False, encoding="utf-8-sig")
+# 연도별 대출순 (build_years.py, PLAN 10절): age{a}_pop_{연도}.csv — 그 해 그 나이 대출순 상위 100권,
+# 전년 대비 변동(전년 자료가 있는 해만)과 다른 해 순위 전부(순위 밖이면 빈칸)
+yp = PROC / "year_ranks.parquet"
+if yp.exists():
+    from build_years import hist_years  # noqa: E402
+    yr = pd.read_parquet(yp)
+    hy = hist_years(yr)
+    yr = yr[yr["rank"].notna()]
+    for (y, a), g in yr.groupby(["year", "age"]):
+        others = [f"rank_{x}" for x in hy if x != y]
+        df = g.nsmallest(100, "rank")[["rank", "isbn13", "loan", "prev_rank", *others, "cent"]].merge(books[cols], left_on="isbn13", right_index=True)
+        df["rank"] = df["rank"].astype(int)
+        if y - 1 in hy:
+            df.insert(3, "변동", (df.prev_rank - df["rank"]).map(lambda v: "새로 진입" if pd.isna(v) else f"{int(v):+d}" if v else "0"))
+        df = df.drop(columns=["prev_rank"])
+        df[others] = df[others].astype("Int64")
+        df.rename(columns={"loan": f"{y}년_{a}세_대출", **{f"rank_{x}": f"{x}년_순위" for x in hy}, "cent": "적합도",
+                           "bookname": "제목", "authors": "저자", "publisher": "출판사",
+                           "publication_year": "출판년", "band": "추천연령", "peak_age": "최다선택나이", "shape": "분포", "is_picture": "그림책",
+                           "total_loans": "총대출"}).to_csv(OUT / f"age{a}_pop_{y}.csv", index=False, encoding="utf-8-sig")
 print("saved:", sorted(p.name for p in OUT.glob("*.csv"))[:6], "...")
