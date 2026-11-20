@@ -51,10 +51,10 @@ if pp.exists():
     wy = window_years(pl)
     span = f"{wy[0]}~{wy[-1]}년"
     for (a, g), z in pl.groupby(["age", "grp"]):
-        df = z.nsmallest(100, "rank")[["rank", "isbn13", "per100", "libs", "loan3", "years", "loan_rank", "cent"]].merge(books[cols], left_on="isbn13", right_index=True)
+        df = z.nsmallest(100, "rank")[["rank", "isbn13", "per100", "libs", "n_hold", "loan3", "years", "loan_rank", "cent"]].merge(books[cols], left_on="isbn13", right_index=True)
         df["per100"] = df.per100.round(1)
         df["loan3"] = df.loan3.round(0).astype(int)
-        df.rename(columns={"per100": "도서관100곳당_연대출", "libs": "소장도서관수", "loan3": f"{span}_{a}세_대출", "years": "연수",
+        df.rename(columns={"per100": "도서관100곳당_연대출", "libs": "소장도서관수", "n_hold": "판수", "loan3": f"{span}_{a}세_대출", "years": "연수",
                            "loan_rank": "대출순", "cent": "적합도", "bookname": "제목", "authors": "저자", "publisher": "출판사",
                            "publication_year": "출판년", "band": "추천연령", "peak_age": "최다선택나이", "shape": "분포", "is_picture": "그림책",
                            "total_loans": "총대출"}).to_csv(OUT / f"age{a}_perlib{'_set' if g == 'set' else ''}.csv", index=False, encoding="utf-8-sig")

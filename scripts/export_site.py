@@ -196,7 +196,8 @@ def write_perlib(pl: pd.DataFrame) -> dict:
     """public/data/perlib/{나이}.json — 도서관당 대출 순위. 반환: meta 용 요약.
     years    대출을 합친 연도들(오름차순)
     min_libs 묶음별 소장 도서관 수 하한 {book, set}
-    book·set 행 [isbn, 창의 대출 합, 연수, 소장 도서관 수, 100곳당 연 대출, 대출순] — 순위순(100곳당 연 대출 내림).
+    book·set 행 [isbn, 창의 대출 합, 연수, 소장 건수, 100곳당 연 대출, 대출순, 판 수] — 순위순(100곳당 연 대출 내림).
+             소장 건수 = 판마다 가진 도서관 수의 합(판 수가 1이면 소장 도서관 수 그대로).
              book = 낱권, set = 전집(한 질당 한 권). 카드 정보는 나이 색인(index/{나이}.json)에서 가져온다."""
     out = PUB / "perlib"
     if out.exists():
@@ -209,8 +210,8 @@ def write_perlib(pl: pd.DataFrame) -> dict:
         for grp in ("book", "set"):
             z = g[g.grp == grp].sort_values("rank")
             doc["min_libs"][grp] = int(z.floor.iloc[0]) if len(z) else LIBS_MIN
-            doc[grp] = [[i, int(round(ln)), int(y), int(lb), round(float(r), 1), int(k)]
-                        for i, ln, y, lb, r, k in zip(z.isbn13, z.loan3, z.years, z.libs, z.per100, z.loan_rank)]
+            doc[grp] = [[i, int(round(ln)), int(y), int(lb), round(float(r), 1), int(k), int(nh)]
+                        for i, ln, y, lb, r, k, nh in zip(z.isbn13, z.loan3, z.years, z.libs, z.per100, z.loan_rank, z.n_hold)]
         counts[int(a)] = [len(doc["book"]), len(doc["set"])]
         p = out / f"{int(a)}.json"
         p.write_text(json.dumps(doc, separators=(",", ":")), encoding="utf-8")

@@ -146,10 +146,16 @@ def year_cutoffs(cells: pd.DataFrame | None, year: int) -> dict[int, float]:
     return {int(r.age): float(r.cutoff) if bool(r.capped) else 0.0 for r in cy.itertuples()}
 
 
-def clean_years(long: pd.DataFrame, bm: pd.DataFrame, cells: pd.DataFrame | None = None, verbose: bool = True):
+def clean_years(long: pd.DataFrame, bm: pd.DataFrame, cells: pd.DataFrame | None = None, verbose: bool = True,
+                extra: pd.DataFrame | None = None):
     """연도마다 (year, ages, L, Lc) 를 낸다. long 은 prep_long 을 거친 것.
     L 은 isbn × 나이 원자료, Lc 는 잡음 제거(게이트 + 비례 차감)와 급등 제외까지 끝낸 값(소수, 수록 하한 적용 전).
-    연도별 대출순(build)과 도서관당 대출(build_perlib.py)이 같은 값을 쓰도록 한 곳에서 계산한다."""
+    연도별 대출순(build)과 도서관당 대출(build_perlib.py)이 같은 값을 쓰도록 한 곳에서 계산한다.
+
+    extra(분야별 보충 수집, 열 year·age·isbn13·loan_count — (연도, 나이, 책)당 한 행)를 주면 무분할 자료에 안 보이던 칸을
+    채운 값을 낸다(도서관당 대출용). 잡음 모형(게이트·비례 계수·급등 판정)은 **무분할 자료로만** 정하고 그 결과를 채운 값에
+    그대로 적용한다 — 보충은 1~7세만 있어 섞어서 판정하면 8~13세와 관측 깊이가 달라지고, 무분할에 보이던 칸의 값이
+    대출순 목록과 달라지기 때문이다. 무분할과 보충에 다 있는 칸은 큰 쪽(보충 쪽이 vol 로 쪼개진 행을 더 많이 담는다)."""
     gate_all = alltime_gate(bm)
     pool_med = pooled_older_median(long)
     lone = lone_cells(long, bm)
@@ -157,9 +163,16 @@ def clean_years(long: pd.DataFrame, bm: pd.DataFrame, cells: pd.DataFrame | None
         L, ages = year_matrix(ly)
         ages = [a for a in ages if a not in DROP_AGES]
         L = L[ages]
+        M = None
+        ey = extra[extra.year == year] if extra is not None else None
+        if ey is not None and len(ey):
+            E = year_matrix(ey)[0].reindex(columns=ages).fillna(0.0)
+            idx = L.index.union(E.index)
+            L = L.reindex(idx).fillna(0.0)          # 보충에만 있는 책은 0 행으로 — 아래 판정에는 영향이 없다
+            M = np.maximum(L, E.reindex(idx).fillna(0.0))
         known = L.index.isin(gate_all.index)
         gate = gate_all.reindex(L.index).fillna(False).astype(bool) | (gate_mask(L, ages) & ~known)
-        Lc, _, f = denoise(L, L.copy(), ages, verbose=False, gate=gate)
+        Lc, Mc, f = denoise(L, L.copy() if M is None else M, ages, verbose=False, gate=gate)
         burst = burst_mask(L, ages, year_cutoffs(cells, year), pool_med, lone)
         names = ly.drop_duplicates("isbn13").set_index("isbn13")["bookname"] if "bookname" in ly.columns else pd.Series(dtype=str)
         if verbose:
@@ -171,7 +184,12 @@ def clean_years(long: pd.DataFrame, bm: pd.DataFrame, cells: pd.DataFrame | None
                 print(f"   {a}세 급등 제외 {len(hit)}권: " + ", ".join(f"{str(names.get(i, i)).strip()[:16]} {int(L.at[i, a])}건"
                                                                    for i in L.loc[hit, a].sort_values(ascending=False).index[:8]))
             Lc.loc[burst[a], a] = 0.0
-        yield int(year), ages, L, Lc
+            if M is not None:
+                Mc.loc[burst[a], a] = 0.0
+        if M is None:
+            yield int(year), ages, L, Lc
+        else:
+            yield int(year), ages, M, Mc
 
 
 def build(long: pd.DataFrame, bm: pd.DataFrame, cent: pd.Series, wk: dict, cells: pd.DataFrame | None = None,

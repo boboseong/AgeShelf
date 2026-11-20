@@ -40,7 +40,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     볼 때마다 새 책을 만나도록 추천도 순위가 가까운 책끼리 자리를 조금씩 바꿔 섞습니다.
     <b>연령 적합도순</b>은 같은 후보를 연령 적합도가 높은 순서대로(적합도가 같으면 추천도순) 정렬합니다. 적합도는 이미 지난 어린 책에는 엄격하게, 앞으로 볼 큰 책에는 너그럽게 매깁니다.
     <b>많이 빌린 책</b>은 {label} 대출 건수순입니다.{years.length > 0 && <> 탭을 누르면 나오는 연도 버튼으로 <b>그 해에 {label}가 빌린 순서</b>({years[years.length - 1]}~{years[0]}년, 그 해 대출 {yearMin}건 이상)를 볼 수 있고, 카드마다 그 책의 <b>연도별 순위</b>({years[years.length - 1]}~{years[0]}년 전부)와 전년 대비 변동이 함께 나옵니다.</>} 후보 {nEligible.toLocaleString()}권 전체를 아래로 내려가며 볼 수 있습니다.
-    {perlib && <><b>도서관당 대출</b>은 {plSpan}에 {label}가 빌린 횟수를 <b>그 책을 가진 전국 도서관 수</b>로 나눈 순서입니다(소장한 도서관 100곳당 1년에 빌린 횟수). 대출순은 많이 비치된 책이 유리한데, 여기서는 덜 비치됐어도 있는 곳에서 자주 빌려 가는 책이 올라옵니다. 소장 도서관 {perlib.min_libs}곳 이상인 책만 싣고, 여러 권을 한꺼번에 빌려 가는 전집은 따로 모았습니다.</>}
+    {perlib && <><b>도서관당 대출</b>은 {plSpan}에 {label}가 빌린 횟수를 <b>그 책을 가진 전국 도서관 수</b>로 나눈 순서입니다(소장한 도서관 100곳당 1년에 빌린 횟수). 대출순은 많이 비치된 책이 유리한데, 여기서는 덜 비치됐어도 있는 곳에서 자주 빌려 가는 책이 올라옵니다. 소장 도서관 {perlib.min_libs}곳 이상인 책만 싣고, 여러 권을 한꺼번에 빌려 가는 전집은 따로 모았습니다. 같은 책의 여러 판은 대출도 소장도 판마다 더해서 셉니다.</>}
   </p>
 
   <details class="filters" id="filters">
@@ -208,11 +208,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       if (state.y === y) yearMap = m;
       return m;
     }
-    // 도서관당 대출: 나이 파일 하나(낱권·전집 두 목록, 순위순 행 [isbn, 대출 합, 연수, 소장 수, 100곳당 연 대출, 대출순]). 카드 정보는 색인에서
+    // 도서관당 대출: 나이 파일 하나(낱권·전집 두 목록, 순위순 행 [isbn, 대출 합, 연수, 소장 건수, 100곳당 연 대출, 대출순, 판 수]). 카드 정보는 색인에서
     async function loadPerlib() {
       if (state.tab !== 'perlib') return null;
       if (!plLoading) {
-        const toMap = (rows) => new Map((rows || []).map((r, k) => [r[0], [k + 1, r[1], r[2], r[3], r[4], r[5]]]));
+        const toMap = (rows) => new Map((rows || []).map((r, k) => [r[0], [k + 1, r[1], r[2], r[3], r[4], r[5], r[6] || 1]]));
         plLoading = fetch(`${base}/data/perlib/${age}.json?v=${window.__dataVersion || ''}`)
           .then((r) => { if (!r.ok) throw new Error(`perlib: ${r.status}`); return r.json(); })
           .then((j) => { plData = { years: j.years || [], min: j.min_libs || {}, book: toMap(j.book), set: toMap(j.set) }; return plData; });
@@ -241,10 +241,10 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
           .sort((x, y) => x.yo - y.yo);
       } else if (state.tab === 'popular') rows = rows.filter((b) => b.pr > 0 && (state.noisy || b.ce >= 0.2)).sort((x, y) => x.pr - y.pr);
       else if (state.tab === 'perlib') {
-        // 도서관당 대출: plo 순위, pll 대출 합, ply 연수, plb 소장 도서관 수, plr 100곳당 연 대출, plk 대출순 (카드가 씀)
+        // 도서관당 대출: plo 순위, pll 대출 합, ply 연수, plb 소장 건수, plr 100곳당 연 대출, plk 대출순, pln 판 수 (카드가 씀)
         const pm = plData[state.g];
         rows = rows.filter((b) => pm.has(b.i))
-          .map((b) => { const [plo, pll, ply, plb, plr, plk] = pm.get(b.i); return { ...b, plo, pll, ply, plb, plr, plk }; })
+          .map((b) => { const [plo, pll, ply, plb, plr, plk, pln] = pm.get(b.i); return { ...b, plo, pll, ply, plb, plr, plk, pln }; })
           .sort((x, y) => x.plo - y.plo);
       }
       else {

@@ -37,14 +37,16 @@
       return `<span class="yh${y === year ? ' on' : ''}${r ? (r >= 1000 ? ' w4' : '') : ' out'}" title="${y}년 ${r ? `${r}위` : '순위 밖 (그 해 대출 30건 미만 또는 1,000위 밖)'}"><i>${y}</i>${r ? `${r}위` : '–'}</span>`;
     }).join('')}</div>`;
   }
-  // 도서관당 대출 줄: b.plr 100곳당 연 대출, b.plb 소장 도서관 수, b.pll 창의 대출 합, b.ply 연수(창 안에서 이 책이 있던 해 수),
-  // b.plk 대출순(같은 창), b.plo 순위. 필터·토글로 목록 위치(#)가 순위와 달라지면 "전체 N위"를 함께 적는다
+  // 도서관당 대출 줄: b.plr 100곳당 연 대출, b.plb 소장 건수, b.pll 창의 대출 합, b.ply 연수(창 안에서 이 책이 있던 해 수),
+  // b.plk 대출순(같은 창), b.plo 순위, b.pln 판 수(2 이상이면 소장 건수 = 판마다 가진 도서관 수의 합 → "(판 n개 합)").
+  // 필터·토글로 목록 위치(#)가 순위와 달라지면 "전체 N위"를 함께 적는다
   function perlibLine(b, pos, ageLabel, plYears, pct) {
     const ys = plYears.slice(-Math.max(1, b.ply || plYears.length));
     const span = ys.length > 1 ? `${ys[0]}~${ys[ys.length - 1]}년` : `${ys[0] ?? ''}년`;
     const rate = Number(b.plr).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    const tip = `${span} ${ageLabel} 대출 ${Number(b.pll).toLocaleString()}건 ÷ (소장 도서관 ${Number(b.plb).toLocaleString()}곳 × ${ys.length}년) × 100`;
-    return `#${pos} · 도서관 100곳당 연 <b title="${esc(tip)}">${rate}회</b>${b.plo !== pos ? ` · 전체 ${b.plo}위` : ''} · 소장 ${Number(b.plb).toLocaleString()}곳`
+    const eds = b.pln > 1 ? `(판 ${b.pln}개 합)` : '';
+    const tip = `${span} ${ageLabel} 대출 ${Number(b.pll).toLocaleString()}건 ÷ (소장 도서관 ${Number(b.plb).toLocaleString()}곳${eds} × ${ys.length}년) × 100`;
+    return `#${pos} · 도서관 100곳당 연 <b title="${esc(tip)}">${rate}회</b>${b.plo !== pos ? ` · 전체 ${b.plo}위` : ''} · 소장 ${Number(b.plb).toLocaleString()}곳${eds}`
       + ` · ${span} ${esc(ageLabel)} 대출 ${Number(b.pll).toLocaleString()}건(대출순 ${Number(b.plk).toLocaleString()}위) · 연령 적합도 ${pct}% (${centLabel(pct)})`;
   }
   window.AgeShelfCard = function (b, opts) {
