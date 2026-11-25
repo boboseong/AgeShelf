@@ -45,6 +45,12 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
 
   <details class="filters" id="filters">
     <summary>필터 <span id="filterSummary" class="sub" style="margin:0"></span></summary>
+    <div class="fgroup"><div class="flabel">적합도</div>
+      <div class="fchips">
+        {[[80, '딱 맞음'], [50, '잘 맞음 이상'], [30, '가장자리 이상']].map(([t, name]) => <button class="chip" data-ce={String(t)} type="button">{name} {t}%+ <small></small></button>)}
+        <span class="sub" style="margin:0;font-size:11px">카드의 연령 적합도({label} 기준)가 이만큼 이상인 책만, 네 목록 모두에 적용됩니다. 숫자는 지금 목록에서 남는 권수입니다. 추천 도서·연령 적합도순은 원래 {centMinPct}% 이상만 싣습니다.</span>
+      </div>
+    </div>
     <div class="fgroup"><div class="flabel">한 권씩</div>
       <div class="fchips">
         <button class="chip" data-one="a" type="button">작가당 1권</button>
@@ -112,8 +118,12 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
   <script is:inline define:vars={{ age, label, profAges, base, kdc2Names, flagTags, topics, regionNames, nEligible, nIndex, years, yearMin, perlib, teaserN: (meta as any).teaser_n ?? 60 }}>
     const $ = (s) => document.querySelector(s);
     const PAGE = 100;
+    // 연령 적합도 필터의 하한(%). 판정은 카드에 보이는 값(Math.floor(ce × 100))과 같게 해서 칩·카드 표시가 어긋나지 않게 한다
+    const CE_STEPS = [...document.querySelectorAll('.chip[data-ce]')].map((c) => Number(c.dataset.ce));
+    const ceOK = (b, t) => !t || Math.floor((b.ce ?? 0) * 100) >= t;
+    let ceCounts = null;   // 하한 → 지금 탭·다른 필터에서 그 하한을 고르면 남는 권수 (칩 옆 숫자)
     const state = { kdc2: new Set(), form: new Set(), flag: new Set(), topic: new Set(), pub: '', lib: null, tab: 'fit', noisy: false,
-      one: new Set(), au: '', ser: '', y: 0, g: 'book' };   // one: 'a' 작가당 1권 · 's' 시리즈당 1권, au·ser: 이 작가·시리즈 책만, y: 많이 빌린 책의 연도(0 = 전체 기간), g: 도서관당 대출의 묶음(book 낱권 · set 전집)
+      one: new Set(), au: '', ser: '', y: 0, g: 'book', ce: 0 };   // ce: 연령 적합도 하한(%, 0 = 없음), one: 'a' 작가당 1권 · 's' 시리즈당 1권, au·ser: 이 작가·시리즈 책만, y: 많이 빌린 책의 연도(0 = 전체 기간), g: 도서관당 대출의 묶음(book 낱권 · set 전집)
     let more = new Map();  // 대표 카드 isbn → { a, s } 숨긴 같은 작가·시리즈 책 수
     let index = null, loading = null, libSet = null, libSetCode = null;
     const yearData = new Map();   // 연도 → Promise<{ hy: 순위 이력 연도들, m: Map(isbn → [그 해 대출, 대출순 위치, 연도별 순위 배열|null]) }>
@@ -126,6 +136,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     state.pub = params.get('pub') || '';
     (params.get('one') || '').split(',').filter((v) => v === 'a' || v === 's').forEach((v) => state.one.add(v));
     state.au = params.get('au') || ''; state.ser = params.get('ser') || '';
+    if (CE_STEPS.includes(Number(params.get('ce')))) state.ce = Number(params.get('ce'));
     if (['cent', 'popular'].includes(params.get('tab')) || (perlib && params.get('tab') === 'perlib')) state.tab = params.get('tab');
     if (state.tab === 'perlib' && params.get('g') === 'set') state.g = 'set';
     if (state.tab === 'popular' && years.includes(Number(params.get('y')))) state.y = Number(params.get('y'));
@@ -155,10 +166,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     }
     mixTeaser();
 
-    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib || state.one.size || state.au || state.ser; }
+    function filtersActive() { return state.kdc2.size || state.form.size || state.flag.size || state.topic.size || state.pub || state.lib || state.one.size || state.au || state.ser || state.ce; }
     function syncUI() {
       document.querySelectorAll('.chip[data-f]').forEach((c) => c.classList.toggle('on', state[c.dataset.f].has(c.dataset.v)));
       document.querySelectorAll('.chip[data-one]').forEach((c) => c.classList.toggle('on', state.one.has(c.dataset.one)));
+      document.querySelectorAll('.chip[data-ce]').forEach((c) => c.classList.toggle('on', Number(c.dataset.ce) === state.ce));
       const sel = $('#pubSelect'); if (sel) sel.value = state.pub;
       document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.tab === state.tab));
       $('#noisyWrap').style.display = state.tab === 'popular' ? '' : 'none';
@@ -167,6 +179,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const pb = $('#plBar');
       if (pb) { pb.hidden = state.tab !== 'perlib'; pb.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c.dataset.g === state.g)); }
       const parts = [];
+      if (state.ce) parts.push(`연령 적합도 ${state.ce}%+`);
       if (state.lib) parts.push(`${state.lib.name} 소장`);
       state.kdc2.forEach((v) => parts.push(kdc2Names[v] || v)); state.form.forEach((v) => parts.push(v));
       state.flag.forEach((v) => parts.push(flagTags[Number(v)] || v)); state.topic.forEach((v) => parts.push(topics[Number(v)] || v)); if (state.pub) parts.push(state.pub);
@@ -180,7 +193,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const clr = $('#libClear'); if (clr) clr.hidden = !state.lib;
       const p = new URLSearchParams();
       for (const f of ['kdc2', 'form', 'flag', 'topic']) if (state[f].size) p.set(f, [...state[f]].join(','));
-      if (state.pub) p.set('pub', state.pub); if (state.tab !== 'fit') p.set('tab', state.tab);
+      if (state.pub) p.set('pub', state.pub); if (state.ce) p.set('ce', String(state.ce)); if (state.tab !== 'fit') p.set('tab', state.tab);
       if (state.tab === 'popular' && state.y) p.set('y', String(state.y));
       if (state.tab === 'perlib' && state.g !== 'book') p.set('g', state.g);
       if (state.one.size) p.set('one', [...state.one].sort().join(',')); if (state.au) p.set('au', state.au); if (state.ser) p.set('ser', state.ser);
@@ -255,7 +268,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       }
       // 같은 책 다른 판은 늘 한 권, 작가·시리즈는 켰을 때 정렬 순서상 맨 앞 한 권 (섞기 전에 골라야 대표가 그 묶음의 추천도 1등이 된다).
       // 특정 작가만 보는 중이면 작가당 1권은 의미가 없고, 특정 시리즈만 보는 중이면 둘 다 끈다(그 시리즈 전체를 보려고 누른 것)
-      const one = window.AgeShelfOnePer(rows, state.one.has('a') && !state.au && !state.ser, state.one.has('s') && !state.ser);
+      const byA = state.one.has('a') && !state.au && !state.ser, byS = state.one.has('s') && !state.ser;
+      // 연령 적합도 하한: 탭마다 목록을 정한 뒤에 걸고(네 목록 공통), 칩 숫자는 하한마다 같은 과정을 거친 권수
+      ceCounts = new Map(CE_STEPS.map((t) => [t, window.AgeShelfOnePer(rows.filter((b) => ceOK(b, t)), byA, byS).rows.length]));
+      if (state.ce) rows = rows.filter((b) => ceOK(b, state.ce));
+      const one = window.AgeShelfOnePer(rows, byA, byS);
       more = one.more;
       return state.tab === 'fit' ? mix(one.rows, filtersActive() ? 0 : teaserN) : one.rows;
     }
@@ -284,10 +301,11 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       if (want !== `${state.tab}|${state.y}|${state.g}`) return;
       const year = state.tab === 'popular' ? state.y : 0;
       current = compute(); shown = 0;
+      document.querySelectorAll('.chip[data-ce] small').forEach((el) => { el.textContent = ceCounts ? ceCounts.get(Number(el.parentElement.dataset.ce)).toLocaleString() : ''; });
       $('#teaser').hidden = true; $('#list').innerHTML = '';
       const order = state.tab === 'popular' ? `${label} 대출 건수순`
         : state.tab === 'cent' ? '연령 적합도순(같으면 추천도순)' : '추천도(적합도 + 인기, 100점) 중심 · 볼 때마다 순서가 조금씩 바뀝니다';
-      const libNote = state.lib ? ` · ${state.lib.name} 소장 도서만` : '';
+      const libNote = (state.ce ? ` · 연령 적합도 ${state.ce}% 이상만` : '') + (state.lib ? ` · ${state.lib.name} 소장 도서만` : '');
       const oneNote = state.one.size ? ` · ${[state.one.has('a') && '작가', state.one.has('s') && '시리즈'].filter(Boolean).join('·')}당 1권` : '';
       const pl = state.tab === 'perlib' ? plData : null;
       $('#listInfo').textContent = pl
@@ -338,6 +356,9 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
       const s = state[c.dataset.f]; s.has(c.dataset.v) ? s.delete(c.dataset.v) : s.add(c.dataset.v); render();
     }));
     $('#pubSelect')?.addEventListener('change', (e) => { state.pub = e.target.value; render(); });
+    document.querySelectorAll('.chip[data-ce]').forEach((c) => c.addEventListener('click', () => {
+      const t = Number(c.dataset.ce); state.ce = state.ce === t ? 0 : t; render();   // 하나만 고른다(다시 누르면 해제)
+    }));
     document.querySelectorAll('.chip[data-one]').forEach((c) => c.addEventListener('click', () => {
       const v = c.dataset.one; state.one.has(v) ? state.one.delete(v) : state.one.add(v); render();
     }));
@@ -350,7 +371,7 @@ const groupOrder = Object.keys(groups).sort((x, y) => (groups[y].reduce((s: numb
     });
     $('#clearFilters')?.addEventListener('click', () => {
       state.kdc2.clear(); state.form.clear(); state.flag.clear(); state.topic.clear(); state.pub = '';
-      state.one.clear(); state.au = ''; state.ser = '';
+      state.one.clear(); state.au = ''; state.ser = ''; state.ce = 0;
       state.lib = null; window.AgeShelfLib?.set(null); const ls = $('#libSelect'); if (ls) ls.value = '';
       render();
     });
